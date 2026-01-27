@@ -9,10 +9,10 @@ import {
   OneToMany 
 } from 'typeorm';
 import { User } from './user.entity';
-import { WeeklyTracking } from '../../beneficiaries/entities/weekly-tracking.entity';
-import { BeneficiaryDocument } from '../../beneficiaries/entities/beneficiary-document.entity';
-import { ImpactMetric } from '../../programs/entities/impact-metric.entity';
 import { StaffRole } from '../../../config/constants';
+import { WeeklyTracking } from 'src/modules/beneficiaries/entities/weekly-tracking.entity';
+import { BeneficiaryDocument } from 'src/modules/beneficiaries/entities/beneficiary-document.entity';
+import { ImpactMetric } from 'src/modules/programs/entities/impact-metric.entity';
 
 @Entity('staff')
 export class Staff {

@@ -1,8 +1,12 @@
-import { createConnection } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { join } from 'path';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 async function createMigration() {
-  const connection = await createConnection({
+  const dataSource = new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
@@ -15,11 +19,18 @@ async function createMigration() {
     logging: true,
   });
 
-  await connection.runMigrations({
+  // Initialize the DataSource
+  await dataSource.initialize();
+  
+  console.log('Running migrations...');
+  
+  await dataSource.runMigrations({
     transaction: 'all',
   });
 
-  await connection.close();
+  console.log('Migrations completed successfully!');
+  
+  await dataSource.destroy();
 }
 
 createMigration().catch((error) => {

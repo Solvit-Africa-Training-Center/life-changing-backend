@@ -10,12 +10,12 @@ import {
   JoinColumn 
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { Program } from '../../programs/entities/program.entity';
+import { BeneficiaryStatus, TrackingFrequency } from '../../../config/constants';
 import { WeeklyTracking } from './weekly-tracking.entity';
-import { Goal } from './goal.entity';
 import { BeneficiaryDocument } from './beneficiary-document.entity';
 import { EmergencyContact } from './emergency-contact.entity';
-import { BeneficiaryStatus, TrackingFrequency } from '../../../config/constants';
+import { Goal } from './goal.entity';
+import { Program } from 'src/modules/programs/entities/program.entity';
 
 @Entity('beneficiaries')
 export class Beneficiary {

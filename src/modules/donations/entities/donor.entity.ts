@@ -10,8 +10,8 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Donation } from './donation.entity';
-import { RecurringDonation } from './recurring-donation.entity';
 import { Currency, ReceiptPreference } from '../../../config/constants';
+import { RecurringDonation } from './recurring-donation.entity';
 
 @Entity('donors')
 export class Donor {

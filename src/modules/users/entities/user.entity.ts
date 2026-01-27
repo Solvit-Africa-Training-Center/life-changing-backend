@@ -13,10 +13,10 @@ import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { UserType, Language } from '../../../config/constants';
 import { Beneficiary } from '../../beneficiaries/entities/beneficiary.entity';
-import { Donor } from '../../donations/entities/donor.entity';
 import { Staff } from './staff.entity';
-import { ActivityLog } from '../../admin/entities/activity-log.entity';
-import { Notification } from '../../notifications/entities/notification.entity';
+import { Donor } from 'src/modules/donations/entities/donor.entity';
+import { ActivityLog } from 'src/modules/admin/entities/activity-log.entity';
+import { Notification as Notif } from 'src/modules/notifications/entities/notification.entity';
 
 @Entity('users')
 export class User {
@@ -97,8 +97,8 @@ export class User {
   @OneToMany(() => ActivityLog, (log) => log.user)
   activityLogs: ActivityLog[];
 
-  @OneToMany(() => Notification, (notification) => notification.user)
-  notifications: Notification[];
+  @OneToMany(() => Notif, (notification) => notification.user)
+  notifications: Notif[];
 
   @BeforeInsert()
   @BeforeUpdate()

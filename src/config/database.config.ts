@@ -1,20 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
-import { User } from '../modules/users/entities/user.entity';
-import { Beneficiary } from '../modules/beneficiaries/entities/beneficiary.entity';
-import { Donor } from '../modules/donations/entities/donor.entity';
-import { Staff } from '../modules/users/entities/staff.entity';
-import { Program } from '../modules/programs/entities/program.entity';
-import { Project } from '../modules/programs/entities/project.entity';
-import { Donation } from '../modules/donations/entities/donation.entity';
-import { RecurringDonation } from '../modules/donations/entities/recurring-donation.entity';
-import { WeeklyTracking } from '../modules/beneficiaries/entities/weekly-tracking.entity';
-import { Goal } from '../modules/beneficiaries/entities/goal.entity';
-import { UssdSession } from '../modules/ussd/entities/ussd-session.entity';
-import { Notification } from '../modules/notifications/entities/notification.entity';
-import { Story } from '../modules/content/entities/story.entity';
-import { ActivityLog } from '../modules/admin/entities/activity-log.entity';
+import { ActivityLog } from 'src/modules/admin/entities/activity-log.entity';
+import { Beneficiary } from 'src/modules/beneficiaries/entities/beneficiary.entity';
+import { Goal } from 'src/modules/beneficiaries/entities/goal.entity';
+import { WeeklyTracking } from 'src/modules/beneficiaries/entities/weekly-tracking.entity';
+import { Story } from 'src/modules/content/entities/story.entity';
+import { Donation } from 'src/modules/donations/entities/donation.entity';
+import { Donor } from 'src/modules/donations/entities/donor.entity';
+import { RecurringDonation } from 'src/modules/donations/entities/recurring-donation.entity';
+import { Program } from 'src/modules/programs/entities/program.entity';
+import { Project } from 'src/modules/programs/entities/project.entity';
+import { Staff } from 'src/modules/users/entities/staff.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { UssdSession } from 'src/modules/ussd/entities/ussd-session.entity';
 
 @Injectable()
 export class DatabaseConfig implements TypeOrmOptionsFactory {
@@ -48,8 +47,12 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       logging: this.configService.get('config.database.logging'),
       migrations: ['dist/migrations/*.js'],
       migrationsRun: true,
-      cli: {
-        migrationsDir: 'src/migrations',
+      maxQueryExecutionTime: 1000, // Log queries taking longer than 1s
+      poolSize: 10, // Connection pool size
+      extra: {
+        max: 20, // Maximum number of connections
+        connectionTimeoutMillis: 5000,
+        idleTimeoutMillis: 30000,
       },
     };
   }

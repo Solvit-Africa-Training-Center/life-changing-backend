@@ -2,8 +2,8 @@ import { createConnection } from 'typeorm';
 import { join } from 'path';
 import * as bcrypt from 'bcrypt';
 import { User } from '../src/modules/users/entities/user.entity';
-import { Program } from '../src/modules/programs/entities/program.entity';
 import { UserType, Language, ProgramCategory, ProgramStatus } from '../src/config/constants';
+import { Program } from 'src/modules/programs/entities/program.entity';
 
 async function seedData() {
   const connection = await createConnection({
