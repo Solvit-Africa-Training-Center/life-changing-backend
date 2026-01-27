@@ -1,8 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { 
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, 
+  CreateDateColumn, 
+  UpdateDateColumn, 
+  OneToOne, 
+  ManyToOne, 
+  OneToMany, 
+  JoinColumn 
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Program } from '../../programs/entities/program.entity';
 import { WeeklyTracking } from './weekly-tracking.entity';
 import { Goal } from './goal.entity';
+import { BeneficiaryDocument } from './beneficiary-document.entity';
+import { EmergencyContact } from './emergency-contact.entity';
 import { BeneficiaryStatus, TrackingFrequency } from '../../../config/constants';
 
 @Entity('beneficiaries')
@@ -10,7 +22,7 @@ export class Beneficiary {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => User, { cascade: true })
+  @OneToOne(() => User, (user) => user.beneficiary, { cascade: true })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
@@ -107,11 +119,18 @@ export class Beneficiary {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  // Relations
   @OneToMany(() => WeeklyTracking, (tracking) => tracking.beneficiary)
   weeklyTrackings: WeeklyTracking[];
 
   @OneToMany(() => Goal, (goal) => goal.beneficiary)
   goals: Goal[];
+
+  @OneToMany(() => BeneficiaryDocument, (document) => document.beneficiary)
+  documents: BeneficiaryDocument[];
+
+  @OneToMany(() => EmergencyContact, (contact) => contact.beneficiary)
+  emergencyContacts: EmergencyContact[];
 
   get age(): number {
     const today = new Date();
