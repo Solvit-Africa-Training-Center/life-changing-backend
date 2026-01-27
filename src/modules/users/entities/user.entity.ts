@@ -1,7 +1,22 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, BeforeInsert, BeforeUpdate } from 'typeorm';
+import { 
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, 
+  CreateDateColumn, 
+  UpdateDateColumn, 
+  OneToOne,
+  OneToMany,
+  BeforeInsert, 
+  BeforeUpdate 
+} from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { UserType, Language } from '../../../config/constants';
 import * as bcrypt from 'bcrypt';
+import { UserType, Language } from '../../../config/constants';
+import { Beneficiary } from '../../beneficiaries/entities/beneficiary.entity';
+import { Donor } from '../../donations/entities/donor.entity';
+import { Staff } from './staff.entity';
+import { ActivityLog } from '../../admin/entities/activity-log.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
 
 @Entity('users')
 export class User {
@@ -68,6 +83,22 @@ export class User {
     darkMode: boolean;
     language: Language;
   };
+
+  // Relations
+  @OneToOne(() => Beneficiary, (beneficiary) => beneficiary.user, { nullable: true })
+  beneficiary: Beneficiary;
+
+  @OneToOne(() => Donor, (donor) => donor.user, { nullable: true })
+  donor: Donor;
+
+  @OneToOne(() => Staff, (staff) => staff.user, { nullable: true })
+  staff: Staff;
+
+  @OneToMany(() => ActivityLog, (log) => log.user)
+  activityLogs: ActivityLog[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 
   @BeforeInsert()
   @BeforeUpdate()
