@@ -34,7 +34,7 @@ A comprehensive backend system for Life-Changing Endeavor Organization (LCEO) su
 ## **Project Structure**
 
 ```
-lceo-backend/
+life-changing-backend/
 ├── src/
 │   ├── main.ts
 │   ├── app.module.ts
