@@ -2,12 +2,13 @@ import {
   Entity, 
   PrimaryGeneratedColumn, 
   Column, 
+  JoinColumn,
   CreateDateColumn, 
   UpdateDateColumn, 
   ManyToOne 
 } from 'typeorm';
 import { Program } from '../../programs/entities/program.entity';
-import { Language } from '../../../config/constants';
+import { Language, AuthorRole } from '../../../config/constants';
 
 @Entity('stories')
 export class Story {
@@ -26,22 +27,24 @@ export class Story {
     rw: string;
   };
 
-  @Column()
+  @Column({ name: 'author_name' })
   authorName: string;
 
   @Column({
+    name: 'author_role',
     type: 'enum',
-    enum: ['beneficiary', 'donor', 'staff', 'partner', 'volunteer'],
+    enum: AuthorRole,
   })
-  authorRole: string;
+  authorRole: AuthorRole;
 
-  @Column({ nullable: true })
+  @Column({ name: 'author_photo', nullable: true })
   authorPhoto: string;
 
   @ManyToOne(() => Program, { nullable: true })
+  @JoinColumn({ name: 'program_id' })
   program: Program;
 
-  @Column({ nullable: true })
+  @Column({ name: 'beneficiary_id', nullable: true })
   beneficiaryId: string;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -52,26 +55,26 @@ export class Story {
     thumbnail: string;
   }>;
 
-  @Column({ default: false })
+  @Column({ name: 'is_featured', default: false })
   isFeatured: boolean;
 
-  @Column({ default: true })
+  @Column({ name: 'is_published', default: true })
   isPublished: boolean;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'published_date', type: 'date' })
   publishedDate: Date;
 
   @Column({
     type: 'enum',
     enum: Language,
-    default: Language.BOTH,
+    default: Language.EN,
   })
   language: Language;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ name: 'view_count', type: 'int', default: 0 })
   viewCount: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ name: 'share_count', type: 'int', default: 0 })
   shareCount: number;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -81,9 +84,9 @@ export class Story {
     duration: number;
   };
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

@@ -1,76 +1,15 @@
-// // Enums
-// export enum UserType {
-//   SUPER_ADMIN = 'super_admin',
-//   ADMIN = 'admin',
-//   STAFF = 'staff',
-//   DONOR = 'donor',
-//   BENEFICIARY = 'beneficiary',
-// }
-
-// export enum Language {
-//   EN = 'en',
-//   RW = 'rw',
-//   BOTH = 'both',
-// }
-
-// export enum BeneficiaryStatus {
-//   ACTIVE = 'active',
-//   GRADUATED = 'graduated',
-//   INACTIVE = 'inactive',
-//   SUSPENDED = 'suspended',
-// }
-
-// export enum ProgramCategory {
-//   EDUCATION = 'education',
-//   ENTREPRENEURSHIP = 'entrepreneurship',
-//   HEALTH = 'health',
-//   CROSS_CUTTING = 'cross_cutting',
-//   EMERGENCY_RESPONSE = 'emergency_response',
-// }
-
-// export enum PaymentMethod {
-//   CARD = 'card',
-//   MOBILE_MONEY = 'mobile_money',
-//   BANK_TRANSFER = 'bank_transfer',
-//   PAYPAL = 'paypal',
-// }
-
-// export enum DonationType {
-//   ONE_TIME = 'one_time',
-//   MONTHLY = 'monthly',
-//   QUARTERLY = 'quarterly',
-//   YEARLY = 'yearly',
-// }
-
-// export enum AttendanceStatus {
-//   PRESENT = 'present',
-//   ABSENT = 'absent',
-//   LATE = 'late',
-//   EXCUSED = 'excused',
-// }
-
-// // Constants
-// export const API_PREFIX = '/api/v1';
-// export const DEFAULT_PAGE_SIZE = 20;
-// export const MAX_PAGE_SIZE = 100;
-// export const CACHE_TTL = 3600;
-// export const USSD_TIMEOUT = 180; // seconds
-
 // User Types
 export enum UserType {
-  SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
-  STAFF = 'staff',
   DONOR = 'donor',
   BENEFICIARY = 'beneficiary',
 }
 
-// Staff Roles
+// Staff Roles (from your staff table)
 export enum StaffRole {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   PROGRAM_MANAGER = 'program_manager',
-  FIELD_OFFICER = 'field_officer',
   DATA_ENTRY = 'data_entry',
   VIEWER = 'viewer',
 }
@@ -79,7 +18,6 @@ export enum StaffRole {
 export enum Language {
   EN = 'en',
   RW = 'rw',
-  BOTH = 'both',
 }
 
 // Beneficiary Status
@@ -87,13 +25,11 @@ export enum BeneficiaryStatus {
   ACTIVE = 'active',
   GRADUATED = 'graduated',
   INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
 }
 
 // Tracking Frequency
 export enum TrackingFrequency {
   WEEKLY = 'weekly',
-  BI_WEEKLY = 'bi_weekly',
   MONTHLY = 'monthly',
 }
 
@@ -102,15 +38,13 @@ export enum AttendanceStatus {
   PRESENT = 'present',
   ABSENT = 'absent',
   LATE = 'late',
-  EXCUSED = 'excused',
 }
 
-// Task Status
+// Task Completion Status
 export enum TaskStatus {
   COMPLETED = 'completed',
   IN_PROGRESS = 'in_progress',
   NOT_DONE = 'not_done',
-  PARTIALLY_DONE = 'partially_done',
 }
 
 // Goal Types
@@ -128,7 +62,6 @@ export enum GoalStatus {
   IN_PROGRESS = 'in_progress',
   ACHIEVED = 'achieved',
   ABANDONED = 'abandoned',
-  ON_HOLD = 'on_hold',
 }
 
 // Program Categories
@@ -137,7 +70,6 @@ export enum ProgramCategory {
   ENTREPRENEURSHIP = 'entrepreneurship',
   HEALTH = 'health',
   CROSS_CUTTING = 'cross_cutting',
-  EMERGENCY_RESPONSE = 'emergency_response',
 }
 
 // Program Status
@@ -145,7 +77,6 @@ export enum ProgramStatus {
   PLANNING = 'planning',
   ACTIVE = 'active',
   COMPLETED = 'completed',
-  SUSPENDED = 'suspended',
   ARCHIVED = 'archived',
 }
 
@@ -160,11 +91,9 @@ export enum PaymentMethod {
 // Payment Status
 export enum PaymentStatus {
   PENDING = 'pending',
-  PROCESSING = 'processing',
   COMPLETED = 'completed',
   FAILED = 'failed',
   REFUNDED = 'refunded',
-  CANCELLED = 'cancelled',
 }
 
 // Donation Types
@@ -187,7 +116,6 @@ export enum RecurringStatus {
   ACTIVE = 'active',
   PAUSED = 'paused',
   CANCELLED = 'cancelled',
-  FAILED = 'failed',
 }
 
 // Currencies
@@ -195,7 +123,6 @@ export enum Currency {
   RWF = 'RWF',
   USD = 'USD',
   EUR = 'EUR',
-  GBP = 'GBP',
 }
 
 // Receipt Preferences
@@ -205,11 +132,70 @@ export enum ReceiptPreference {
   NONE = 'none',
 }
 
-// System Constants
+// Document Types
+export enum DocumentType {
+  ID_CARD = 'id_card',
+  BIRTH_CERTIFICATE = 'birth_certificate',
+  SCHOOL_CERTIFICATE = 'school_certificate',
+  MEDICAL_REPORT = 'medical_report',
+  BUSINESS_LICENSE = 'business_license',
+  OTHER = 'other',
+}
+
+// Notification Types
+export enum NotificationType {
+  DONATION_RECEIPT = 'donation_receipt',
+  TRACKING_REMINDER = 'tracking_reminder',
+  PROGRAM_UPDATE = 'program_update',
+  IMPACT_REPORT = 'impact_report',
+  SYSTEM_ALERT = 'system_alert',
+  WELCOME = 'welcome',
+  PASSWORD_RESET = 'password_reset',
+}
+
+// Notification Status
+export enum NotificationStatus {
+  PENDING = 'pending',
+  SENT = 'sent',
+  DELIVERED = 'delivered',
+  FAILED = 'failed',
+  READ = 'read',
+}
+
+// Notification Channel
+export enum NotificationChannel {
+  SMS = 'sms',
+  EMAIL = 'email',
+  IN_APP = 'in_app',
+}
+
+// Impact Metric Period
+export enum MetricPeriod {
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  ANNUAL = 'annual',
+}
+
+// Impact Metric Source
+export enum MetricSource {
+  KOBO = 'kobo',
+  MANUAL = 'manual',
+  SYSTEM_CALCULATED = 'system_calculated',
+}
+
+// Author Roles
+export enum AuthorRole {
+  BENEFICIARY = 'beneficiary',
+  DONOR = 'donor',
+  STAFF = 'staff',
+  PARTNER = 'partner',
+  VOLUNTEER = 'volunteer',
+}
+
+// Constants
 export const API_PREFIX = '/api/v1';
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 export const CACHE_TTL = 3600;
 export const USSD_TIMEOUT = 180; // seconds
-export const DEFAULT_CURRENCY = Currency.RWF;
-export const SUPPORTED_CURRENCIES = [Currency.RWF, Currency.USD, Currency.EUR];

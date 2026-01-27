@@ -2,6 +2,7 @@ import {
   Entity, 
   PrimaryGeneratedColumn, 
   Column, 
+  JoinColumn,
   CreateDateColumn, 
   UpdateDateColumn, 
   ManyToOne 
@@ -14,6 +15,7 @@ export class EmergencyContact {
   id: string;
 
   @ManyToOne(() => Beneficiary, (beneficiary) => beneficiary.emergencyContacts)
+  @JoinColumn({ name: 'beneficiary_id' })
   beneficiary: Beneficiary;
 
   @Column()
@@ -25,18 +27,18 @@ export class EmergencyContact {
   @Column()
   phone: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'alternate_phone', nullable: true })
   alternatePhone: string;
 
   @Column({ type: 'text' })
   address: string;
 
-  @Column({ default: false })
+  @Column({ name: 'is_primary', default: false })
   isPrimary: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

@@ -2,11 +2,13 @@ import {
   Entity, 
   PrimaryGeneratedColumn, 
   Column, 
+  JoinColumn,
   CreateDateColumn, 
   ManyToOne 
 } from 'typeorm';
 import { Beneficiary } from './beneficiary.entity';
 import { Staff } from '../../users/entities/staff.entity';
+import { DocumentType } from '../../../config/constants';
 
 @Entity('beneficiary_documents')
 export class BeneficiaryDocument {
@@ -14,45 +16,42 @@ export class BeneficiaryDocument {
   id: string;
 
   @ManyToOne(() => Beneficiary, (beneficiary) => beneficiary.documents)
+  @JoinColumn({ name: 'beneficiary_id' })
   beneficiary: Beneficiary;
 
   @Column({
+    name: 'document_type',
     type: 'enum',
-    enum: [
-      'id_card',
-      'birth_certificate',
-      'school_certificate',
-      'medical_report',
-      'business_license',
-      'other'
-    ],
+    enum: DocumentType,
   })
-  documentType: string;
+  documentType: DocumentType;
 
-  @Column()
+  @Column({ name: 'file_url' })
   fileUrl: string;
 
-  @Column()
+  @Column({ name: 'file_name' })
   fileName: string;
 
-  @Column()
+  @Column({ name: 'file_size' })
   fileSize: number;
 
-  @Column()
+  @Column({ name: 'mime_type' })
   mimeType: string;
 
   @ManyToOne(() => Staff, { nullable: true })
+  @JoinColumn({ name: 'uploaded_by' })
   uploadedBy: Staff;
 
   @Column({ default: false })
   verified: boolean;
 
   @ManyToOne(() => Staff, { nullable: true })
+  @JoinColumn({ name: 'verified_by' })
   verifiedBy: Staff;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'verified_at', type: 'timestamp', nullable: true })
   verifiedAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

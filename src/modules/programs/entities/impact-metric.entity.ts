@@ -3,10 +3,12 @@ import {
   PrimaryGeneratedColumn, 
   Column, 
   CreateDateColumn, 
+  JoinColumn,
   ManyToOne 
 } from 'typeorm';
 import { Program } from './program.entity';
 import { Staff } from '../../users/entities/staff.entity';
+import { MetricPeriod, MetricSource } from '../../../config/constants';
 
 @Entity('impact_metrics')
 export class ImpactMetric {
@@ -14,41 +16,43 @@ export class ImpactMetric {
   id: string;
 
   @ManyToOne(() => Program, (program) => program.impactMetrics)
+  @JoinColumn({ name: 'program_id' })
   program: Program;
 
-  @Column()
+  @Column({ name: 'metric_name' })
   metricName: string;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  @Column({ name: 'metric_value', type: 'decimal', precision: 12, scale: 2 })
   metricValue: number;
 
-  @Column()
+  @Column({ name: 'measurement_unit' })
   measurementUnit: string;
 
   @Column({
     type: 'enum',
-    enum: ['weekly', 'monthly', 'quarterly', 'annual'],
+    enum: MetricPeriod,
   })
-  period: string;
+  period: MetricPeriod;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'period_date', type: 'date' })
   periodDate: Date;
 
   @Column({
     type: 'enum',
-    enum: ['kobo', 'manual', 'system_calculated'],
+    enum: MetricSource,
   })
-  source: string;
+  source: MetricSource;
 
   @Column({ type: 'text', nullable: true })
   notes: string;
 
   @ManyToOne(() => Staff, { nullable: true })
+  @JoinColumn({ name: 'verified_by' })
   verifiedBy: Staff;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'verified_at', type: 'timestamp', nullable: true })
   verifiedAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

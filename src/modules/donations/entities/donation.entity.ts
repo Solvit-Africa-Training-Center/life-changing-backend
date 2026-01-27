@@ -2,6 +2,7 @@ import {
   Entity, 
   PrimaryGeneratedColumn, 
   Column, 
+  JoinColumn,
   CreateDateColumn, 
   UpdateDateColumn, 
   ManyToOne 
@@ -17,6 +18,7 @@ export class Donation {
   id: string;
 
   @ManyToOne(() => Donor, (donor) => donor.donations)
+  @JoinColumn({ name: 'donor_id' })
   donor: Donor;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
@@ -25,41 +27,46 @@ export class Donation {
   @Column()
   currency: string;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  @Column({ name: 'local_amount', type: 'decimal', precision: 12, scale: 2 })
   localAmount: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 4 })
+  @Column({ name: 'exchange_rate', type: 'decimal', precision: 5, scale: 4 })
   exchangeRate: number;
 
   @Column({
+    name: 'donation_type',
     type: 'enum',
     enum: DonationType,
   })
   donationType: DonationType;
 
   @ManyToOne(() => Project, (project) => project.donations, { nullable: true })
+  @JoinColumn({ name: 'project_id' })
   project: Project;
 
   @ManyToOne(() => Program, { nullable: true })
+  @JoinColumn({ name: 'program_id' })
   program: Program;
 
   @Column({
+    name: 'payment_method',
     type: 'enum',
     enum: PaymentMethod,
   })
   paymentMethod: PaymentMethod;
 
   @Column({
+    name: 'payment_status',
     type: 'enum',
     enum: PaymentStatus,
     default: PaymentStatus.PENDING,
   })
   paymentStatus: PaymentStatus;
 
-  @Column({ unique: true })
+  @Column({ name: 'transaction_id', unique: true })
   transactionId: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'payment_details', type: 'jsonb', nullable: true })
   paymentDetails: {
     provider: string;
     accountNumber?: string;
@@ -69,16 +76,16 @@ export class Donation {
     cardBrand?: string;
   };
 
-  @Column({ default: false })
+  @Column({ name: 'receipt_sent', default: false })
   receiptSent: boolean;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'receipt_sent_at', type: 'timestamp', nullable: true })
   receiptSentAt: Date;
 
-  @Column({ nullable: true })
+  @Column({ name: 'receipt_number', nullable: true })
   receiptNumber: string;
 
-  @Column({ default: false })
+  @Column({ name: 'is_anonymous', default: false })
   isAnonymous: boolean;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -89,15 +96,15 @@ export class Donation {
     taxReceiptEligible: boolean;
   };
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'donor_message', type: 'text', nullable: true })
   donorMessage: string;
 
-  @Column({ default: false })
+  @Column({ name: 'is_test', default: false })
   isTest: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

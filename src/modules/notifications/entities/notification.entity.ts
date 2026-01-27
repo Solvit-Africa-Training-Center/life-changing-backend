@@ -3,35 +3,26 @@ import {
   PrimaryGeneratedColumn, 
   Column, 
   CreateDateColumn, 
+  JoinColumn,
   ManyToOne 
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { Language } from '../../../config/constants';
+import { NotificationType, NotificationStatus, NotificationChannel } from '../../../config/constants';
 
 @Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column({
     type: 'enum',
-    enum: [
-      'donation_receipt',
-      'tracking_reminder',
-      'program_update',
-      'impact_report',
-      'system_alert',
-      'welcome',
-      'password_reset',
-      'weekly_summary',
-      'goal_achieved',
-      'payment_failed'
-    ],
+    enum: NotificationType,
   })
-  type: string;
+  type: NotificationType;
 
   @Column({ type: 'jsonb' })
   title: {
@@ -50,31 +41,31 @@ export class Notification {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'sent', 'delivered', 'failed', 'read'],
-    default: 'pending',
+    enum: NotificationStatus,
+    default: NotificationStatus.PENDING,
   })
-  status: string;
+  status: NotificationStatus;
 
   @Column({
     type: 'enum',
-    enum: ['sms', 'email', 'in_app', 'push'],
-    default: 'in_app',
+    enum: NotificationChannel,
+    default: NotificationChannel.IN_APP,
   })
-  channel: string;
+  channel: NotificationChannel;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'scheduled_for', type: 'timestamp', nullable: true })
   scheduledFor: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'sent_at', type: 'timestamp', nullable: true })
   sentAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'delivered_at', type: 'timestamp', nullable: true })
   deliveredAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt: Date;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'delivery_report', type: 'jsonb', nullable: true })
   deliveryReport: {
     providerId: string;
     status: string;
@@ -82,6 +73,6 @@ export class Notification {
     cost: number;
   };
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

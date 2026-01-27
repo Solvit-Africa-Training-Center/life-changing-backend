@@ -2,6 +2,7 @@ import {
   Entity, 
   PrimaryGeneratedColumn, 
   Column, 
+  JoinColumn,
   CreateDateColumn, 
   ManyToOne 
 } from 'typeorm';
@@ -13,21 +14,22 @@ export class ActivityLog {
   id: string;
 
   @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column()
   action: string;
 
-  @Column()
+  @Column({ name: 'entity_type' })
   entityType: string;
 
-  @Column()
+  @Column({ name: 'entity_id' })
   entityId: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'old_values', type: 'jsonb', nullable: true })
   oldValues: Record<string, any>;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'new_values', type: 'jsonb', nullable: true })
   newValues: Record<string, any>;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -36,10 +38,10 @@ export class ActivityLog {
     new: any;
   }>;
 
-  @Column()
+  @Column({ name: 'ip_address' })
   ipAddress: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'user_agent', nullable: true })
   userAgent: string;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -49,6 +51,6 @@ export class ActivityLog {
     city: string;
   };
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

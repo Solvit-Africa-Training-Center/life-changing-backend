@@ -2,6 +2,7 @@ import {
   Entity, 
   PrimaryGeneratedColumn, 
   Column, 
+  JoinColumn,
   CreateDateColumn, 
   ManyToOne 
 } from 'typeorm';
@@ -15,9 +16,10 @@ export class WeeklyTracking {
   id: string;
 
   @ManyToOne(() => Beneficiary, (beneficiary) => beneficiary.weeklyTrackings)
+  @JoinColumn({ name: 'beneficiary_id' })
   beneficiary: Beneficiary;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'week_ending', type: 'date' })
   weekEnding: Date;
 
   @Column({
@@ -26,26 +28,27 @@ export class WeeklyTracking {
   })
   attendance: AttendanceStatus;
 
-  @Column({ nullable: true })
+  @Column({ name: 'task_given', nullable: true })
   taskGiven: string;
 
   @Column({
+    name: 'task_completion_status',
     type: 'enum',
     enum: TaskStatus,
     nullable: true,
   })
   taskCompletionStatus: TaskStatus;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ name: 'income_this_week', type: 'decimal', precision: 10, scale: 2, default: 0 })
   incomeThisWeek: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ name: 'expenses_this_week', type: 'decimal', precision: 10, scale: 2, default: 0 })
   expensesThisWeek: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ name: 'current_capital', type: 'decimal', precision: 10, scale: 2, default: 0 })
   currentCapital: number;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'sales_data', type: 'jsonb', nullable: true })
   salesData: {
     unitsSold: number;
     averagePrice: number;
@@ -55,13 +58,13 @@ export class WeeklyTracking {
   @Column({ type: 'text', nullable: true })
   challenges: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'solutions_implemented', type: 'text', nullable: true })
   solutionsImplemented: string;
 
   @Column({ type: 'text', nullable: true })
   notes: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'next_week_plan', type: 'jsonb', nullable: true })
   nextWeekPlan: {
     tasks: string[];
     goals: string[];
@@ -69,15 +72,16 @@ export class WeeklyTracking {
   };
 
   @ManyToOne(() => Staff, { nullable: true })
+  @JoinColumn({ name: 'submitted_by' })
   submittedBy: Staff;
 
-  @Column({ default: false })
+  @Column({ name: 'is_offline_sync', default: false })
   isOfflineSync: boolean;
 
-  @Column({ nullable: true })
+  @Column({ name: 'sync_session_id', nullable: true })
   syncSessionId: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'offline_data', type: 'jsonb', nullable: true })
   offlineData: {
     deviceInfo: string;
     location: {
@@ -87,12 +91,13 @@ export class WeeklyTracking {
     timestamp: Date;
   };
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'submitted_at' })
   submittedAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'verified_at', type: 'timestamp', nullable: true })
   verifiedAt: Date;
 
   @ManyToOne(() => Staff, { nullable: true })
+  @JoinColumn({ name: 'verified_by' })
   verifiedBy: Staff;
 }

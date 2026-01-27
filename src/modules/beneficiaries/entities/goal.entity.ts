@@ -2,6 +2,7 @@ import {
   Entity, 
   PrimaryGeneratedColumn, 
   Column, 
+  JoinColumn,
   CreateDateColumn, 
   UpdateDateColumn, 
   ManyToOne 
@@ -15,6 +16,7 @@ export class Goal {
   id: string;
 
   @ManyToOne(() => Beneficiary, (beneficiary) => beneficiary.goals)
+  @JoinColumn({ name: 'beneficiary_id' })
   beneficiary: Beneficiary;
 
   @Column({ type: 'text' })
@@ -26,13 +28,13 @@ export class Goal {
   })
   type: GoalType;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: 'target_amount', type: 'decimal', precision: 10, scale: 2 })
   targetAmount: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ name: 'current_progress', type: 'decimal', precision: 10, scale: 2, default: 0 })
   currentProgress: number;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'target_date', type: 'date' })
   targetDate: Date;
 
   @Column({
@@ -54,25 +56,19 @@ export class Goal {
   @Column({ type: 'text', nullable: true })
   notes: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'action_plan', type: 'jsonb', nullable: true })
   actionPlan: {
     steps: string[];
     resourcesNeeded: string[];
     timeline: string;
   };
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'completed_at', type: 'date', nullable: true })
   completedAt: Date;
-
-  get progressPercentage(): number {
-    return this.targetAmount > 0 
-      ? Math.round((this.currentProgress / this.targetAmount) * 100) 
-      : 0;
-  }
 }

@@ -10,6 +10,7 @@ import { Beneficiary } from '../../beneficiaries/entities/beneficiary.entity';
 import { Project } from './project.entity';
 import { ImpactMetric } from './impact-metric.entity';
 import { Story } from '../../content/entities/story.entity';
+import { Donation } from '../../donations/entities/donation.entity';
 import { ProgramCategory, ProgramStatus } from '../../../config/constants';
 
 @Entity('programs')
@@ -27,10 +28,6 @@ export class Program {
   description: {
     en: string;
     rw: string;
-    short: {
-      en: string;
-      rw: string;
-    };
   };
 
   @Column({
@@ -39,20 +36,16 @@ export class Program {
   })
   category: ProgramCategory;
 
-  @Column({ type: 'jsonb' })
+  @Column({ name: 'sdg_alignment', type: 'jsonb' })
   sdgAlignment: number[];
 
-  @Column({ type: 'jsonb' })
-  kpiTargets: Record<string, {
-    target: number;
-    unit: string;
-    frequency: 'weekly' | 'monthly' | 'quarterly' | 'annual';
-  }>;
+  @Column({ name: 'kpi_targets', type: 'jsonb' })
+  kpiTargets: Record<string, any>;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'start_date', type: 'date' })
   startDate: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'end_date', type: 'date', nullable: true })
   endDate: Date;
 
   @Column({
@@ -65,34 +58,28 @@ export class Program {
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   budget: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({ name: 'funds_allocated', type: 'decimal', precision: 15, scale: 2, default: 0 })
   fundsAllocated: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({ name: 'funds_utilized', type: 'decimal', precision: 15, scale: 2, default: 0 })
   fundsUtilized: number;
 
-  @Column({ nullable: true })
+  @Column({ name: 'cover_image', nullable: true })
   coverImage: string;
 
   @Column({ nullable: true })
   logo: string;
 
-  @Column({ default: 0 })
+  @Column({ name: 'sort_order', default: 0 })
   sortOrder: number;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: {
-    partners: string[];
-    locations: string[];
-    targetDemographic: string;
-    contactPerson?: string;
-    contactPhone?: string;
-  };
+  metadata: Record<string, any>;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   // Relations
@@ -108,9 +95,6 @@ export class Program {
   @OneToMany(() => Story, (story) => story.program)
   stories: Story[];
 
-  get budgetUtilizationPercentage(): number {
-    return this.budget > 0 
-      ? Math.round((this.fundsUtilized / this.budget) * 100) 
-      : 0;
-  }
+  @OneToMany(() => Donation, (donation) => donation.program)
+  donations: Donation[];
 }

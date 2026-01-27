@@ -10,26 +10,26 @@ import {
   JoinColumn 
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { BeneficiaryStatus, TrackingFrequency } from '../../../config/constants';
+import { Program } from '../../programs/entities/program.entity';
 import { WeeklyTracking } from './weekly-tracking.entity';
+import { Goal } from './goal.entity';
 import { BeneficiaryDocument } from './beneficiary-document.entity';
 import { EmergencyContact } from './emergency-contact.entity';
-import { Goal } from './goal.entity';
-import { Program } from 'src/modules/programs/entities/program.entity';
+import { BeneficiaryStatus, TrackingFrequency } from '../../../config/constants';
 
 @Entity('beneficiaries')
 export class Beneficiary {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => User, (user) => user.beneficiary, { cascade: true })
+  @OneToOne(() => User, { cascade: true })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ name: 'full_name' })
   fullName: string;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'date_of_birth', type: 'date' })
   dateOfBirth: Date;
 
   @Column({ type: 'jsonb' })
@@ -38,13 +38,10 @@ export class Beneficiary {
     sector: string;
     cell: string;
     village: string;
-    gpsCoordinates?: {
-      latitude: number;
-      longitude: number;
-    };
   };
 
   @ManyToOne(() => Program, (program) => program.beneficiaries)
+  @JoinColumn({ name: 'program_id' })
   program: Program;
 
   @Column({
@@ -54,69 +51,45 @@ export class Beneficiary {
   })
   status: BeneficiaryStatus;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'enrollment_date', type: 'date' })
   enrollmentDate: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'exit_date', type: 'date', nullable: true })
   exitDate: Date;
 
-  @Column({ type: 'text', nullable: true })
-  exitReason: string;
-
-  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  @Column({ name: 'start_capital', type: 'decimal', precision: 12, scale: 2 })
   startCapital: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({ name: 'current_capital', type: 'decimal', precision: 12, scale: 2, default: 0 })
   currentCapital: number;
 
-  @Column()
+  @Column({ name: 'business_type' })
   businessType: string;
 
-  @Column({ type: 'jsonb', nullable: true })
-  businessDetails: {
-    product: string;
-    market: string;
-    suppliers: string[];
-    challenges: string[];
-  };
-
   @Column({
+    name: 'tracking_frequency',
     type: 'enum',
     enum: TrackingFrequency,
     default: TrackingFrequency.WEEKLY,
   })
   trackingFrequency: TrackingFrequency;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'last_tracking_date', type: 'date', nullable: true })
   lastTrackingDate: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'next_tracking_date', type: 'date', nullable: true })
   nextTrackingDate: Date;
 
-  @Column({ nullable: true, select: false })
-  ussdPin: string;
-
-  @Column({ default: 0 })
+  @Column({ name: 'profile_completion', default: 0 })
   profileCompletion: number;
 
-  @Column({ type: 'jsonb', nullable: true })
-  profileData: {
-    educationLevel: string;
-    maritalStatus: string;
-    numberOfChildren: number;
-    skills: string[];
-  };
-
-  @Column({ default: false })
+  @Column({ name: 'requires_special_attention', default: false })
   requiresSpecialAttention: boolean;
 
-  @Column({ type: 'text', nullable: true })
-  specialNotes: string;
-
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   // Relations
@@ -131,17 +104,4 @@ export class Beneficiary {
 
   @OneToMany(() => EmergencyContact, (contact) => contact.beneficiary)
   emergencyContacts: EmergencyContact[];
-
-  get age(): number {
-    const today = new Date();
-    const birthDate = new Date(this.dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    return age;
-  }
 }

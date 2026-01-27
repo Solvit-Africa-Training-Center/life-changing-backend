@@ -9,10 +9,10 @@ import {
   OneToMany 
 } from 'typeorm';
 import { User } from './user.entity';
+import { WeeklyTracking } from '../../beneficiaries/entities/weekly-tracking.entity';
+import { BeneficiaryDocument } from '../../beneficiaries/entities/beneficiary-document.entity';
+import { ImpactMetric } from '../../programs/entities/impact-metric.entity';
 import { StaffRole } from '../../../config/constants';
-import { WeeklyTracking } from 'src/modules/beneficiaries/entities/weekly-tracking.entity';
-import { BeneficiaryDocument } from 'src/modules/beneficiaries/entities/beneficiary-document.entity';
-import { ImpactMetric } from 'src/modules/programs/entities/impact-metric.entity';
 
 @Entity('staff')
 export class Staff {
@@ -23,7 +23,7 @@ export class Staff {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ name: 'full_name' })
   fullName: string;
 
   @Column({
@@ -39,26 +39,26 @@ export class Staff {
   @Column({ type: 'jsonb' })
   permissions: string[];
 
-  @Column({ nullable: true })
+  @Column({ name: 'employee_id', nullable: true })
   employeeId: string;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'hire_date', type: 'date', nullable: true })
   hireDate: Date;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'contact_info', type: 'jsonb', nullable: true })
   contactInfo: {
     emergencyContact: string;
     emergencyPhone: string;
     address: string;
   };
 
-  @Column({ default: true })
+  @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   // Relations

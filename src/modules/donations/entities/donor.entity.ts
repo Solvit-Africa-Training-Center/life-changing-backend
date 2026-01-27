@@ -10,72 +10,65 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Donation } from './donation.entity';
-import { Currency, ReceiptPreference } from '../../../config/constants';
 import { RecurringDonation } from './recurring-donation.entity';
+import { Currency, ReceiptPreference } from '../../../config/constants';
 
 @Entity('donors')
 export class Donor {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => User, (user) => user.donor, { cascade: true })
+  @OneToOne(() => User, { cascade: true })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ name: 'full_name' })
   fullName: string;
 
   @Column()
   country: string;
 
   @Column({
+    name: 'preferred_currency',
     type: 'enum',
     enum: Currency,
     default: Currency.RWF,
   })
   preferredCurrency: Currency;
 
-  @Column({ type: 'jsonb' })
+  @Column({ name: 'communication_preferences', type: 'jsonb' })
   communicationPreferences: {
     email: boolean;
     sms: boolean;
-    push: boolean;
-    frequency: 'instant' | 'daily' | 'weekly';
   };
 
   @Column({
+    name: 'receipt_preference',
     type: 'enum',
     enum: ReceiptPreference,
     default: ReceiptPreference.EMAIL,
   })
   receiptPreference: ReceiptPreference;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({ name: 'total_donated', type: 'decimal', precision: 12, scale: 2, default: 0 })
   totalDonated: number;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'last_donation_date', type: 'date', nullable: true })
   lastDonationDate: Date;
 
-  @Column({ default: false })
+  @Column({ name: 'is_recurring_donor', default: false })
   isRecurringDonor: boolean;
 
-  @Column({ default: false })
+  @Column({ name: 'anonymity_preference', default: false })
   anonymityPreference: boolean;
 
-  @Column({ type: 'jsonb', nullable: true })
-  donorCategory: {
-    type: 'individual' | 'corporate' | 'foundation';
-    organizationName?: string;
-    taxId?: string;
-  };
-
-  @Column({ default: true })
+  @Column({ name: 'receive_newsletter', default: true })
   receiveNewsletter: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   // Relations

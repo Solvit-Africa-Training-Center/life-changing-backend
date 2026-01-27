@@ -12,13 +12,13 @@ export class UssdSession {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'phone_number' })
   phoneNumber: string;
 
-  @Column()
+  @Column({ name: 'session_id', unique: true })
   sessionId: string;
 
-  @Column()
+  @Column({ name: 'menu_state' })
   menuState: string;
 
   @Column({ type: 'jsonb' })
@@ -37,19 +37,19 @@ export class UssdSession {
     };
   };
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ name: 'step_count', type: 'int', default: 0 })
   stepCount: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'last_interaction' })
   lastInteraction: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ name: 'expires_at', type: 'timestamp' })
   expiresAt: Date;
 
-  @Column({ default: true })
+  @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
   @Column({ type: 'jsonb', nullable: true })
