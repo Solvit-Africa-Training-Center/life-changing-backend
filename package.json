@@ -24,7 +24,7 @@
     "docker:logs": "docker-compose logs -f",
     "docker:rebuild": "docker-compose down && docker-compose up --build -d"
   },
-  
+
   "dependencies": {
     "@nestjs/bull": "^11.0.4",
     "@nestjs/cache-manager": "^3.1.0",
@@ -63,6 +63,7 @@
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.28"
   },
+  
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/bull": "^3.15.9",
