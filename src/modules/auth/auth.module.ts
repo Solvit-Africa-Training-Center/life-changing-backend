@@ -1,3 +1,4 @@
+// src/modules/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -7,7 +8,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
-import { UsersService } from '../users/users.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
@@ -18,6 +18,7 @@ import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
 import { Helpers } from '../../shared/utils/helpers';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AdminModule } from '../admin/admin.module';
+import { TokenBlacklistService } from './token-blacklist.service';
 
 @Module({
   imports: [
@@ -40,11 +41,11 @@ import { AdminModule } from '../admin/admin.module';
   controllers: [AuthController],
   providers: [
     AuthService,
-    UsersService,
     JwtStrategy,
     RefreshTokenStrategy,
     LocalStrategy,
     Helpers,
+    TokenBlacklistService,
   ],
   exports: [AuthService, JwtModule],
 })

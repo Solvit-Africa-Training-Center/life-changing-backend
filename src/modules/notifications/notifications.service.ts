@@ -1,13 +1,12 @@
-// src/modules/notifications/services/notification.service.ts
+// src/modules/notifications/notifications.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as sgMail from '@sendgrid/mail';
-import { AfricasTalkingService } from './africas-talking.service';
 import type { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 
+import { AfricasTalkingService } from './africas-talking.service';
 import { Notif } from './entities/notification.entity';
 import { NotificationType, NotificationStatus, NotificationChannel, Language } from '../../config/constants';
 
@@ -18,15 +17,8 @@ export class NotificationService {
     private africasTalkingService: AfricasTalkingService,
     @InjectRepository(Notif)
     private notificationsRepository: Repository<Notif>,
-    @InjectQueue('notifications') 
-    private notificationsQueue: Queue,
-  ) {
-    // Initialize SendGrid
-    const sendgridApiKey = this.configService.get('config.sendgrid.apiKey');
-    if (sendgridApiKey) {
-      sgMail.setApiKey(sendgridApiKey);
-    }
-  }
+    @InjectQueue('notifications') private notificationsQueue: Queue,
+  ) {}
 
   async createNotification(
     userId: string,
@@ -48,86 +40,100 @@ export class NotificationService {
       status: NotificationStatus.PENDING,
     });
 
-    return await this.notificationsRepository.save(notification);
+    const savedNotification = await this.notificationsRepository.save(notification);
+    
+    // Queue processing for in-app notifications
+    if (channel === NotificationChannel.IN_APP) {
+      await this.queueNotification(savedNotification);
+    }
+    
+    return savedNotification;
+  }
+
+  private async queueNotification(notification: Notif): Promise<void> {
+    const jobData = {
+      notificationId: notification.id,
+      userId: notification.user.id,
+      type: notification.type,
+      data: notification.data,
+    };
+
+    let jobName = 'generic-notification';
+    
+    // Map notification types to specific job handlers
+    switch (notification.type) {
+      case NotificationType.WELCOME:
+        jobName = 'welcome-notification';
+        break;
+      case NotificationType.PASSWORD_RESET:
+        jobName = 'password-reset-notification';
+        break;
+      // Add more mappings as needed
+    }
+
+    await this.notificationsQueue.add(jobName, jobData, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
+      },
+    });
   }
 
   async sendEmailVerification(email: string, token: string): Promise<void> {
-    const frontendUrl = this.configService.get('config.frontendUrl');
-    const verificationLink = `${frontendUrl}/verify-account?token=${token}`;
-    
-    const msg = {
-      to: email,
-      from: {
-        email: this.configService.get('config.sendgrid.fromEmail'),
-        name: this.configService.get('config.sendgrid.fromName'),
+    await this.notificationsQueue.add('email-verification', {
+      email,
+      token,
+      timestamp: new Date().toISOString(),
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
       },
-      subject: 'Verify Your LCEO Account',
-      templateId: 'd-1234567890abcdef1234567890abcdef',
-      dynamicTemplateData: {
-        verification_link: verificationLink,
-        token: token,
-      },
-    };
-
-    try {
-      await sgMail.send(msg);
-      console.log(`Verification email sent to ${email}`);
-    } catch (error) {
-      console.error('Error sending verification email:', error);
-      throw error;
-    }
+    });
   }
 
   async sendSMSVerification(phone: string, token: string): Promise<void> {
-    const message = `Welcome to LCEO! Your verification code is: ${token}. Use this to verify your account.`;
-    
-    try {
-      await this.africasTalkingService.sendSMS(phone, message);
-      console.log(`Verification SMS sent to ${phone}`);
-    } catch (error) {
-      console.error('Error sending verification SMS:', error);
-      throw error;
-    }
+    await this.notificationsQueue.add('sms-verification', {
+      phone,
+      token,
+      timestamp: new Date().toISOString(),
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
+      },
+    });
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const frontendUrl = this.configService.get('config.frontendUrl');
-    const resetLink = `${frontendUrl}/reset-password?token=${token}`;
-    
-    const msg = {
-      to: email,
-      from: {
-        email: this.configService.get('config.sendgrid.fromEmail'),
-        name: this.configService.get('config.sendgrid.fromName'),
+    await this.notificationsQueue.add('password-reset-email', {
+      email,
+      token,
+      timestamp: new Date().toISOString(),
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
       },
-      subject: 'Reset Your LCEO Password',
-      templateId: 'd-abcdef1234567890abcdef1234567890',
-      dynamicTemplateData: {
-        reset_link: resetLink,
-        token: token,
-        expiry_time: '1 hour',
-      },
-    };
-
-    try {
-      await sgMail.send(msg);
-      console.log(`Password reset email sent to ${email}`);
-    } catch (error) {
-      console.error('Error sending password reset email:', error);
-      throw error;
-    }
+    });
   }
 
   async sendPasswordResetSMS(phone: string, token: string): Promise<void> {
-    const message = `LCEO Password Reset: Your reset code is ${token}. This code expires in 1 hour.`;
-    
-    try {
-      await this.africasTalkingService.sendSMS(phone, message);
-      console.log(`Password reset SMS sent to ${phone}`);
-    } catch (error) {
-      console.error('Error sending password reset SMS:', error);
-      throw error;
-    }
+    await this.notificationsQueue.add('password-reset-sms', {
+      phone,
+      token,
+      timestamp: new Date().toISOString(),
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
+      },
+    });
   }
 
   async sendWelcomeNotification(userId: string, userType: string, language: Language = Language.EN): Promise<Notif> {
@@ -199,5 +205,31 @@ export class NotificationService {
       where: { user: { id: userId } },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async getQueueStats(): Promise<any> {
+    const [waiting, active, completed, failed, delayed] = await Promise.all([
+      this.notificationsQueue.getWaitingCount(),
+      this.notificationsQueue.getActiveCount(),
+      this.notificationsQueue.getCompletedCount(),
+      this.notificationsQueue.getFailedCount(),
+      this.notificationsQueue.getDelayedCount(),
+    ]);
+
+    return {
+      waiting,
+      active,
+      completed,
+      failed,
+      delayed,
+      total: waiting + active + completed + failed + delayed,
+    };
+  }
+
+  async retryFailedJobs(): Promise<void> {
+    const failedJobs = await this.notificationsQueue.getFailed();
+    for (const job of failedJobs) {
+      await job.retry();
+    }
   }
 }

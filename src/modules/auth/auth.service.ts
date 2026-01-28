@@ -1,3 +1,4 @@
+// src/modules/auth/auth.service.ts
 import { 
   Injectable, 
   UnauthorizedException, 
@@ -24,7 +25,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyAccountDto } from './dto/verify-account.dto';
 import { Tokens, JwtPayload } from './interfaces/tokens.interface';
 import { LoginResponse, RegisterResponse } from './interfaces/auth-response.interface';
-import { Language, StaffRole, UserType } from '../../config/constants';
+import { Language, StaffRole, UserType, NotificationType, NotificationChannel } from '../../config/constants';
 import { Donor } from '../donations/entities/donor.entity';
 import { Staff } from '../users/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
@@ -161,14 +162,14 @@ export class AuthService {
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
 
-    // Send welcome notification
+    // Send welcome notification (in-app, queued)
     await this.notificationService.sendWelcomeNotification(
       user.id,
       user.userType,
       user.language
     );
 
-    // Send verification email/SMS
+    // Send verification email/SMS (external, queued)
     await this.sendVerification(user);
 
     // Log registration activity
@@ -270,7 +271,6 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
-  // Add this helper method
   async validateUser(identifier: string, password: string): Promise<User | null> {
     const user = await this.usersService.findByEmailOrPhone(identifier);
     
@@ -296,15 +296,14 @@ export class AuthService {
       isVerified: user.isVerified,
     };
 
-    // Check which method your JwtService has
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('config.jwt.secret'),
-      expiresIn: (this.configService.get<string>('config.jwt.expiresIn') ??'24h') as StringValue,
+      expiresIn: (this.configService.get<string>('config.jwt.expiresIn') ?? '24h') as StringValue,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('config.jwt.refreshSecret'),
-       expiresIn: (this.configService.get<string>('config.jwt.refreshExpiresIn') ??'7d') as StringValue,
+      expiresIn: (this.configService.get<string>('config.jwt.refreshExpiresIn') ?? '7d') as StringValue,
     });
 
     return {
@@ -356,7 +355,7 @@ export class AuthService {
         await this.notificationService.sendSMSVerification(user.phone, user.verificationToken!);
       }
     } catch (error) {
-      console.error('Failed to send verification:', error);
+      console.error('Failed to queue verification:', error);
     }
   }
 
@@ -370,7 +369,6 @@ export class AuthService {
     return Language.EN;
   }
 
-  // Add other missing methods from previous implementation
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
     const { email, phone } = forgotPasswordDto;
     
@@ -397,13 +395,16 @@ export class AuthService {
     
     await this.usersRepository.save(user);
 
+    // Send in-app notification
     await this.notificationService.sendPasswordResetNotification(
       user.id,
       user.language
     );
 
+    // Send external reset email/SMS (queued)
     await this.sendPasswordReset(user, resetToken);
 
+    // Log password reset request
     await this.activityLogService.logActivity(
       user.id,
       'PASSWORD_RESET_REQUEST',
@@ -441,8 +442,10 @@ export class AuthService {
     
     await this.usersRepository.save(user);
 
+    // Invalidate all existing tokens
     await this.tokenBlacklistService.blacklistAllUserTokens(user.id);
 
+    // Log password reset completion
     await this.activityLogService.logActivity(
       user.id,
       'PASSWORD_RESET_COMPLETE',
@@ -473,6 +476,7 @@ export class AuthService {
     
     await this.usersRepository.save(user);
 
+    // Log account verification
     await this.activityLogService.logActivity(
       user.id,
       'ACCOUNT_VERIFIED',
@@ -494,7 +498,7 @@ export class AuthService {
         await this.notificationService.sendPasswordResetSMS(user.phone, token);
       }
     } catch (error) {
-      console.error('Failed to send password reset:', error);
+      console.error('Failed to queue password reset:', error);
     }
   }
 }
