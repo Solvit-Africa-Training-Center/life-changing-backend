@@ -1,3 +1,4 @@
+// src/modules/ussd/entities/ussd-session.entity.ts
 import { 
   Entity, 
   PrimaryGeneratedColumn, 
@@ -6,7 +7,11 @@ import {
   UpdateDateColumn,
   Index 
 } from 'typeorm';
-import { Language } from '../../../config/constants';
+import { 
+  UserType, 
+  Language, 
+  AttendanceStatus 
+} from '../../../config/constants';
 
 @Entity('ussd_sessions')
 @Index(['sessionId'], { unique: true })
@@ -22,10 +27,30 @@ export class UssdSession {
   @Column({ name: 'session_id', unique: true, length: 255 })
   sessionId: string;
 
-  @Column({ name: 'menu_state', length: 100, default: 'main_menu' })
+  @Column({ 
+    name: 'menu_state', 
+    length: 100, 
+    default: 'main_menu' 
+  })
   menuState: string;
 
-  @Column({ type: 'jsonb' })
+  @Column({ 
+    name: 'user_type', 
+    type: 'enum', 
+    enum: UserType,
+    nullable: true 
+  })
+  userType: UserType | null;
+
+  @Column({ 
+    name: 'language', 
+    type: 'enum', 
+    enum: Language,
+    default: Language.EN 
+  })
+  language: Language;
+
+  @Column({ type: 'jsonb', nullable: true })
   data: {
     currentMenu: string;
     previousMenu: string;
@@ -33,10 +58,12 @@ export class UssdSession {
     beneficiaryId?: string;
     staffId?: string;
     donorId?: string;
-    language: Language;
+    userId?: string;
     inputHistory: string[];
+    
+    // Weekly Tracking Data
     trackingData?: {
-      attendance?: string;
+      attendance?: AttendanceStatus;
       incomeThisWeek?: number;
       expensesThisWeek?: number;
       currentCapital?: number;
@@ -44,11 +71,15 @@ export class UssdSession {
       solutionsImplemented?: string;
       notes?: string;
     };
+    
+    // Goal Data
     goalData?: {
       goalId?: string;
       goalType?: string;
       progressAmount?: number;
     };
+    
+    // Donation Data
     donationData?: {
       amount?: number;
       currency?: string;
