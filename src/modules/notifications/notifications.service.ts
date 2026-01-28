@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as sgMail from '@sendgrid/mail';
-import { AfricasTalkingService } from './africas-talking.service';
 import { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
+import { AfricasTalkingService } from './africas-talking.service';
 
 @Injectable()
 export class NotificationService {
