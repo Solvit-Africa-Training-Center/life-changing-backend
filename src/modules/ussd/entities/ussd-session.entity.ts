@@ -10,13 +10,23 @@ import {
 import { 
   UserType, 
   Language, 
-  AttendanceStatus 
+  AttendanceStatus,
+  BeneficiaryStatus,
+  StaffRole,
+  Currency,
+  PaymentMethod,
+  PaymentStatus,
+  GoalStatus,
+  GoalType,
+  TaskStatus
 } from '../../../config/constants';
 
 @Entity('ussd_sessions')
 @Index(['sessionId'], { unique: true })
 @Index(['phoneNumber'])
 @Index(['isActive'])
+@Index(['userType'])
+@Index(['language'])
 export class UssdSession {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -27,11 +37,7 @@ export class UssdSession {
   @Column({ name: 'session_id', unique: true, length: 255 })
   sessionId: string;
 
-  @Column({ 
-    name: 'menu_state', 
-    length: 100, 
-    default: 'main_menu' 
-  })
+  @Column({ name: 'menu_state', length: 100, default: 'main_menu' })
   menuState: string;
 
   @Column({ 
@@ -50,16 +56,17 @@ export class UssdSession {
   })
   language: Language;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'jsonb', default: {} })
   data: {
     currentMenu: string;
-    previousMenu: string;
+    previousMenu: string | null;
     selectedOptions: Record<string, any>;
     beneficiaryId?: string;
     staffId?: string;
     donorId?: string;
     userId?: string;
     inputHistory: string[];
+    trackingStep?: number;
     
     // Weekly Tracking Data
     trackingData?: {
@@ -70,20 +77,47 @@ export class UssdSession {
       challenges?: string;
       solutionsImplemented?: string;
       notes?: string;
+      submissionDate?: Date;
     };
     
     // Goal Data
     goalData?: {
       goalId?: string;
-      goalType?: string;
+      goalType?: GoalType;
+      goalStatus?: GoalStatus;
       progressAmount?: number;
+      targetAmount?: number;
+      description?: string;
     };
     
     // Donation Data
     donationData?: {
       amount?: number;
-      currency?: string;
-      paymentMethod?: string;
+      currency?: Currency;
+      paymentMethod?: PaymentMethod;
+      paymentStatus?: PaymentStatus;
+      transactionId?: string;
+      donorName?: string;
+      donorPhone?: string;
+    };
+    
+    // Staff Data
+    staffData?: {
+      role?: StaffRole;
+      assignedTasks?: Array<{
+        taskId: string;
+        taskName: string;
+        status: TaskStatus;
+        dueDate?: Date;
+      }>;
+      beneficiariesToTrack?: string[];
+    };
+    
+    // Emergency Data
+    emergencyData?: {
+      contactType?: 'call' | 'alert' | 'info';
+      message?: string;
+      sentTo?: string[];
     };
   };
 
@@ -102,11 +136,17 @@ export class UssdSession {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
+  completedAt: Date | null;
+
   @Column({ type: 'jsonb', nullable: true })
   metadata: {
     network: string;
     device: string;
     location?: string;
     serviceCode: string;
+    networkCode?: string;
+    sessionDuration?: number;
+    errorCount?: number;
   };
 }
