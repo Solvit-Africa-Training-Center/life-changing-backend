@@ -1,3 +1,4 @@
+// src/modules/auth/token-blacklist.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
@@ -34,5 +35,17 @@ export class TokenBlacklistService {
   async removeUserToken(userId: string, token: string): Promise<void> {
     const key = `user_tokens:${userId}:${token}`;
     await this.redis.del(key);
+  }
+
+  async getUserActiveTokens(userId: string): Promise<string[]> {
+    const pattern = `user_tokens:${userId}:*`;
+    const keys = await this.redis.keys(pattern);
+    
+    if (keys.length === 0) {
+      return [];
+    }
+    
+    const tokens = keys.map(key => key.split(':')[2]);
+    return tokens;
   }
 }

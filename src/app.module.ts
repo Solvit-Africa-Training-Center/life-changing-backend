@@ -3,6 +3,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TerminusModule } from '@nestjs/terminus';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { ConfigurationModule } from './config/configuration.module';
 import { DatabaseModule } from './shared/database/database.module';
@@ -40,13 +41,27 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     ScheduleModule.forRoot(),
     
     // Queue processing
-    BullModule.forRoot({
-      redis: {
-        host: 'localhost',
-        port: 6379,
-      },
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('config.redis.host') || 'localhost',
+          port: configService.get('config.redis.port') || 6379,
+          password: configService.get('config.redis.password'),
+        },
+        defaultJobOptions: {
+          removeOnComplete: 100,
+          removeOnFail: 100,
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
+        },
+      }),
+      inject: [ConfigService],
     }),
-    
+
     // Feature modules
     AuthModule,
     UsersModule,
