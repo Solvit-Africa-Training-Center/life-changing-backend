@@ -1,0 +1,93 @@
+================================================================================
+                           BENEFICIARIES MODULE OVERVIEW
+================================================================================
+
+1. PURPOSE
+----------
+The Beneficiaries Module is the core interface for program participants (beneficiaries). 
+It empowers them to track their progress, manage goals, and access support services, 
+ensuring a "beneficiary-friendly" experience even in offline/low-bandwidth environments via USSD.
+
+2. KEY FEATURES & WORKFLOWS
+---------------------------
+
+A. WEEKLY PROGRESS TRACKING ("Regular Activities")
+   - Workflow: Beneficiary submits a weekly report.
+   - Data Captured:
+     * Income & Expenses (financial health)
+     * Current Capital (savings/business value)
+     * Attendance (participation)
+     * Challenges faced & Solutions implemented
+   - System Action:
+     * Automatically updates the beneficiary's main 'Current Capital' record.
+     * Logs a permanent history record for reporting/analytics.
+
+B. GOAL MANAGEMENT
+   - Workflow: Beneficiary sets and updates personal objectives.
+   - Types: Financial, Business, Education, etc.
+   - System Action:
+     * Tracks progress (e.g., 50,000 / 100,000 RWF).
+     * Automatically marks status as 'ACHIEVED' when progress meets the target.
+
+C. PERSONAL PROFILE & PROGRAM INFO
+   - Workflow: Beneficiary views their dashboard.
+   - content:
+     * Personal details (Name, ID, Status)
+     * Enrolled Program details (Name, Start/End Dates)
+     * Emergency Contacts
+
+D. SUPPORT SERVICES ("Help & Emergencies")
+   - Workflow: Beneficiary requests urgent help.
+   - System Action:
+     * Sets the 'Requires Special Attention' flag on the user's profile.
+     * Appends an "[URGENT]" note to their latest weekly tracking log for Program Managers to see immediately.
+
+E. USSD / OFFLINE ACCESS
+   - Workflow: System generates a lightweight summary for SMS/USSD interfaces.
+   - Features:
+     * Multilingual support (English 'en' vs Kinyarwanda 'rw').
+     * Returns minimal payload: Program Name, Capital, Next Tracking Date, Active Goal.
+
+3. API ENDPOINTS REFERENCE
+--------------------------
+
+[GET] /beneficiaries/profile
+      -> Returns full profile, status, program info, and capital.
+
+[GET] /beneficiaries/my-program
+      -> Returns specific details of the enrolled program.
+
+[POST] /beneficiaries/tracking
+      -> Submit weekly report (Income, Expenses, Challenges).
+      -> *Side Effect*: Updates Beneficiary.currentCapital.
+
+[POST] /beneficiaries/goals
+      -> Create a new goal (Target Amount, Date, Type).
+
+[PATCH] /beneficiaries/goals/:id
+      -> Update specific goal progress.
+      -> *Side Effect*: Auto-completes goal if progress >= target.
+
+[POST] /beneficiaries/support
+      -> Request urgent assistance.
+      -> *Side Effect*: Flags profile as 'Requires Special Attention'.
+
+[GET] /beneficiaries/ussd-summary?lang=en|rw
+      -> Lightweight summary for text-based interfaces.
+      -> Example Response:
+         {
+           "programName": "Business Development (rw: Iterambere)",
+           "currentCapital": 50000,
+           "activeGoal": "Buy raw materials (20000/50000)"
+         }
+
+4. DATA STRUCTURE (ENTITIES)
+----------------------------
+
+- Beneficiary (Core): Links to User, Program. Stores Capital, Status, Risk Flags.
+- WeeklyTracking: ledger of weekly inputs (Income, Expenses, Tasks).
+- Goal: Objectives with milestones and progress tracking.
+- BeneficiaryDocument: Files/Images related to the beneficiary.
+- EmergencyContact: Safety contact details.
+
+================================================================================
