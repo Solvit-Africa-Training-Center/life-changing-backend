@@ -1,9 +1,16 @@
+// src/modules/admin/admin.module.ts
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ActivityLogService } from './activity-log.service';
 import { AdminController } from './admin.controller';
-import { AdminService } from './admin.service';
+import { ActivityLog } from './entities/activity-log.entity';
 
 @Module({
+  imports: [
+    TypeOrmModule.forFeature([ActivityLog]),
+  ],
   controllers: [AdminController],
-  providers: [AdminService]
+  providers: [ActivityLogService],
+  exports: [ActivityLogService],
 })
 export class AdminModule {}

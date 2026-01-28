@@ -22,6 +22,7 @@ import { Staff } from '../users/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
 import { NotificationService } from '../notifications/notifications.service';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { ActivityLogService } from '../admin/activity-log.service';
 
 @Injectable()
 export class AuthService {
@@ -118,7 +119,7 @@ export class AuthService {
       phone: formattedPhone,
       password,
       userType,
-      language: language || Language.EN,
+      language: this.parseLanguage(language),
       isVerified: false, // Require email/phone verification
       verificationToken: this.helpers.generateRandomToken(),
     };
@@ -139,10 +140,16 @@ export class AuthService {
       tokens.refreshToken,
       7 * 24 * 60 * 60 // 7 days in seconds
     );
-    
+
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
 
+    // Send welcome notification using proper NotificationType
+    await this.notificationService.sendWelcomeNotification(
+        user.id,
+        user.userType,
+        user.language
+    );
     // Send verification email/SMS
     await this.sendVerification(user);
 
@@ -241,6 +248,10 @@ export class AuthService {
     
     await this.usersRepository.save(user);
 
+    await this.notificationService.sendPasswordResetNotification(
+        user.id,
+        user.language
+    );
     // Send reset email/SMS
     await this.sendPasswordReset(user, resetToken);
 
@@ -353,4 +364,14 @@ export class AuthService {
     // 1. Send email with reset link
     // 2. Or send SMS with reset code
   }
+
+  private parseLanguage(lang?: string): Language {
+    if (!lang) return Language.EN;
+    
+    const normalized = lang.toLowerCase();
+    if (normalized === 'rw' || normalized === 'kinyarwanda') {
+        return Language.RW;
+    }
+    return Language.EN;
+    }
 }
