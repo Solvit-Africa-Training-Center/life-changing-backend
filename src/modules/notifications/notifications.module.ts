@@ -4,12 +4,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { AfricasTalkingService } from './africas-talking.service';
 import { NotificationsController } from './notifications.controller';
-import { Notification } from './entities/notification.entity';
+import { Notif } from './entities/notification.entity';
 import { NotificationService } from './notifications.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification]),
+    TypeOrmModule.forFeature([Notif]),
     BullModule.registerQueue({
       name: 'notifications',
     }),

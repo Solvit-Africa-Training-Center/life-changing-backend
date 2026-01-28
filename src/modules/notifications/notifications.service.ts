@@ -8,7 +8,7 @@ import { AfricasTalkingService } from './africas-talking.service';
 import type { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 
-import { Notification as Notif } from './entities/notification.entity';
+import { Notif } from './entities/notification.entity';
 import { NotificationType, NotificationStatus, NotificationChannel, Language } from '../../config/constants';
 
 @Injectable()
@@ -18,7 +18,8 @@ export class NotificationService {
     private africasTalkingService: AfricasTalkingService,
     @InjectRepository(Notif)
     private notificationsRepository: Repository<Notif>,
-    @InjectQueue('notifications') private notificationsQueue: Queue,
+    @InjectQueue('notifications') 
+    private notificationsQueue: Queue,
   ) {
     // Initialize SendGrid
     const sendgridApiKey = this.configService.get('config.sendgrid.apiKey');

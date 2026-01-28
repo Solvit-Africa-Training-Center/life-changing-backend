@@ -1,7 +1,7 @@
+import { Request } from 'express';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Request } from 'express';
 import { ActivityLog } from './entities/activity-log.entity';
 
 @Injectable()

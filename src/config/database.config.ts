@@ -15,7 +15,7 @@ import { RecurringDonation } from '../modules/donations/entities/recurring-donat
 import { ImpactMetric } from '../modules/programs/entities/impact-metric.entity';
 import { Program } from '../modules/programs/entities/program.entity';
 import { Project } from '../modules/programs/entities/project.entity';
-import { Notification } from '../modules/notifications/entities/notification.entity';
+import { Notif } from '../modules/notifications/entities/notification.entity';
 import { Staff } from '../modules/users/entities/staff.entity';
 import { User } from '../modules/users/entities/user.entity';
 import { UssdSession } from '../modules/ussd/entities/ussd-session.entity';
@@ -58,7 +58,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
         
         // Communication & Integration
         UssdSession,
-        Notification,
+        Notif,
         
         // Content Management
         Story,

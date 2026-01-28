@@ -23,7 +23,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyAccountDto } from './dto/verify-account.dto';
 import { Tokens, JwtPayload } from './interfaces/tokens.interface';
-import { AuthResponse, LoginResponse, RegisterResponse } from './interfaces/auth-response.interface';
+import { LoginResponse, RegisterResponse } from './interfaces/auth-response.interface';
 import { Language, StaffRole, UserType } from '../../config/constants';
 import { Donor } from '../donations/entities/donor.entity';
 import { Staff } from '../users/entities/staff.entity';
