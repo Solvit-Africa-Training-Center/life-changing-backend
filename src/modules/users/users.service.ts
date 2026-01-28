@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { BaseService } from '../../shared/services/base.service';
+import { PaginationParams } from '../../shared/interfaces/pagination.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PaginationParams } from '../../shared/interfaces/pagination.interface';
+import { UserType } from 'src/config/constants';
 
 @Injectable()
 export class UsersService extends BaseService<User> {
@@ -90,12 +91,53 @@ export class UsersService extends BaseService<User> {
     return this.paginate(paginationParams, where);
   }
 
-  async getUsersByType(userType: string, paginationParams: PaginationParams) {
-    return this.paginate(paginationParams, { userType });
+   async getUsersByType(userType: string, paginationParams: PaginationParams) {
+    // Validate and cast the userType string to UserType enum
+    if (!Object.values(UserType).includes(userType as UserType)) {
+      throw new NotFoundException(`Invalid user type: ${userType}`);
+    }
+    
+    const where: FindOptionsWhere<User> = { 
+      userType: userType as UserType 
+    };
+    
+    return this.paginate(paginationParams, where);
   }
 
   async countUsersByType(userType?: string): Promise<number> {
-    const where = userType ? { userType } : undefined;
+    let where: FindOptionsWhere<User> | undefined;
+    
+    if (userType) {
+      if (!Object.values(UserType).includes(userType as UserType)) {
+        throw new NotFoundException(`Invalid user type: ${userType}`);
+      }
+      
+      where = { userType: userType as UserType };
+    }
+    
     return this.count(where);
+  }
+   async findUserWithRelations(id: string, relations: string[] = []): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { id },
+      relations,
+    });
+  }
+
+  async findUsersWithRoles(paginationParams: PaginationParams, roles?: string[]) {
+    const where: FindOptionsWhere<User>[] = [];
+    
+    if (roles && roles.length > 0) {
+      // Validate each role
+      const validRoles = roles.filter(role => 
+        Object.values(UserType).includes(role as UserType)
+      );
+      
+      if (validRoles.length > 0) {
+        where.push(...validRoles.map(role => ({ userType: role as UserType })));
+      }
+    }
+    
+    return this.paginate(paginationParams, where.length > 0 ? where : undefined);
   }
 }
