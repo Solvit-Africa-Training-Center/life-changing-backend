@@ -1,15 +1,23 @@
+// src/modules/notifications/services/notification.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as sgMail from '@sendgrid/mail';
-import { Queue } from 'bull';
-import { InjectQueue } from '@nestjs/bull';
 import { AfricasTalkingService } from './africas-talking.service';
+import type { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
+
+import { Notification as Notif } from './entities/notification.entity';
+import { NotificationType, NotificationStatus, NotificationChannel, Language } from '../../config/constants';
 
 @Injectable()
 export class NotificationService {
   constructor(
     private configService: ConfigService,
     private africasTalkingService: AfricasTalkingService,
+    @InjectRepository(Notif)
+    private notificationsRepository: Repository<Notif>,
     @InjectQueue('notifications') private notificationsQueue: Queue,
   ) {
     // Initialize SendGrid
@@ -17,6 +25,29 @@ export class NotificationService {
     if (sendgridApiKey) {
       sgMail.setApiKey(sendgridApiKey);
     }
+  }
+
+  async createNotification(
+    userId: string,
+    type: NotificationType,
+    title: { en: string; rw: string },
+    message: { en: string; rw: string },
+    channel: NotificationChannel = NotificationChannel.IN_APP,
+    data?: Record<string, any>,
+    scheduledFor?: Date,
+  ): Promise<Notif> {
+    const notification = this.notificationsRepository.create({
+      user: { id: userId } as any,
+      type,
+      title,
+      message,
+      channel,
+      data,
+      scheduledFor,
+      status: NotificationStatus.PENDING,
+    });
+
+    return await this.notificationsRepository.save(notification);
   }
 
   async sendEmailVerification(email: string, token: string): Promise<void> {
@@ -30,7 +61,7 @@ export class NotificationService {
         name: this.configService.get('config.sendgrid.fromName'),
       },
       subject: 'Verify Your LCEO Account',
-      templateId: 'd-1234567890abcdef1234567890abcdef', // Create template in SendGrid
+      templateId: 'd-1234567890abcdef1234567890abcdef',
       dynamicTemplateData: {
         verification_link: verificationLink,
         token: token,
@@ -69,7 +100,7 @@ export class NotificationService {
         name: this.configService.get('config.sendgrid.fromName'),
       },
       subject: 'Reset Your LCEO Password',
-      templateId: 'd-abcdef1234567890abcdef1234567890', // Create template in SendGrid
+      templateId: 'd-abcdef1234567890abcdef1234567890',
       dynamicTemplateData: {
         reset_link: resetLink,
         token: token,
@@ -98,21 +129,74 @@ export class NotificationService {
     }
   }
 
-  // Queue email for async processing
-  async queueEmailVerification(email: string, token: string): Promise<void> {
-    await this.notificationsQueue.add('email-verification', {
-      email,
-      token,
-      type: 'verification',
+  async sendWelcomeNotification(userId: string, userType: string, language: Language = Language.EN): Promise<Notif> {
+    const title = {
+      en: 'Welcome to LCEO!',
+      rw: 'Murakaza neza LCEO!',
+    };
+
+    const message = {
+      en: `Thank you for joining LCEO as a ${userType}. We're excited to have you on board!`,
+      rw: `Murakoze kwiyandikisha mu LCEO nk'${userType}. Turabashimiye kuba hamwe natwe!`,
+    };
+
+    return await this.createNotification(
+      userId,
+      NotificationType.WELCOME,
+      title,
+      message,
+      NotificationChannel.IN_APP,
+      { userType, language },
+    );
+  }
+
+  async sendPasswordResetNotification(userId: string, language: Language = Language.EN): Promise<Notif> {
+    const title = {
+      en: 'Password Reset Requested',
+      rw: 'Gusubiza ijambobanga Byasabye',
+    };
+
+    const message = {
+      en: 'A password reset has been requested for your account. If this was not you, please contact support.',
+      rw: 'Gusubiza ijambobanga byasabywe kuri konte yawe. Ibi niba atari wowe, mwakire inkunga.',
+    };
+
+    return await this.createNotification(
+      userId,
+      NotificationType.PASSWORD_RESET,
+      title,
+      message,
+      NotificationChannel.IN_APP,
+      { language },
+    );
+  }
+
+  async markNotificationAsSent(notificationId: string, deliveryReport?: any): Promise<void> {
+    await this.notificationsRepository.update(notificationId, {
+      status: NotificationStatus.SENT,
+      sentAt: new Date(),
+      deliveryReport,
     });
   }
 
-  // Queue SMS for async processing
-  async queueSMSVerification(phone: string, token: string): Promise<void> {
-    await this.notificationsQueue.add('sms-verification', {
-      phone,
-      token,
-      type: 'verification',
+  async markNotificationAsDelivered(notificationId: string): Promise<void> {
+    await this.notificationsRepository.update(notificationId, {
+      status: NotificationStatus.DELIVERED,
+      deliveredAt: new Date(),
+    });
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await this.notificationsRepository.update(notificationId, {
+      status: NotificationStatus.READ,
+      readAt: new Date(),
+    });
+  }
+
+  async getUserNotifications(userId: string): Promise<Notif[]> {
+    return await this.notificationsRepository.find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
     });
   }
 }

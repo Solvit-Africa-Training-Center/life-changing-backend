@@ -20,6 +20,8 @@ import { Language, StaffRole, UserType } from '../../config/constants';
 import { Donor } from '../donations/entities/donor.entity';
 import { Staff } from '../users/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
+import { NotificationService } from '../notifications/notifications.service';
+import { TokenBlacklistService } from './token-blacklist.service';
 
 @Injectable()
 export class AuthService {
@@ -36,6 +38,9 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private helpers: Helpers,
+    private notificationService: NotificationService,
+    private tokenBlacklistService: TokenBlacklistService,
+    private activityLogService: ActivityLogService,
   ) {}
 
   async validateUser(identifier: string, password: string): Promise<User | null> {
@@ -81,6 +86,11 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user);
 
+     // Store refresh token for blacklisting
+    await this.tokenBlacklistService.storeUserToken(
+      user.id,tokens.refreshToken, 7 * 24 * 60 * 60 // 7 days in seconds
+    );
+
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
 
@@ -122,6 +132,14 @@ export class AuthService {
     // Generate tokens
     const tokens = await this.generateTokens(user);
 
+    
+    // Store refresh token for blacklisting
+    await this.tokenBlacklistService.storeUserToken(
+      user.id,
+      tokens.refreshToken,
+      7 * 24 * 60 * 60 // 7 days in seconds
+    );
+    
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
 
