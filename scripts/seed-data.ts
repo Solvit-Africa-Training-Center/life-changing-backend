@@ -41,7 +41,7 @@ async function seedData() {
     adminUser.email = 'admin@lceo.org';
     adminUser.phone = '+250788123456';
     adminUser.password = await bcrypt.hash('Admin@123', 10);
-    adminUser.userType = UserType.ADMIN; // Changed from SUPER_ADMIN to ADMIN
+    adminUser.userType = UserType.ADMIN;
     adminUser.language = Language.EN;
     adminUser.isVerified = true;
     adminUser.isActive = true;
@@ -52,7 +52,7 @@ async function seedData() {
     // Also create a Staff record for the admin
     const adminStaff = new Staff();
     adminStaff.user = adminUser;
-    adminStaff.role = StaffRole.SUPER_ADMIN; // Use StaffRole for super admin
+    adminStaff.role = StaffRole.SUPER_ADMIN;
     adminStaff.department = 'Administration';
     adminStaff.employeeId = 'ADMIN001';
     adminStaff.hireDate = new Date();
