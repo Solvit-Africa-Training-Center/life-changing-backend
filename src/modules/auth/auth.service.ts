@@ -16,7 +16,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyAccountDto } from './dto/verify-account.dto';
 import { Tokens, JwtPayload } from './interfaces/tokens.interface';
 import { AuthResponse, LoginResponse, RegisterResponse } from './interfaces/auth-response.interface';
-import { UserType } from '../../config/constants';
+import { Language, StaffRole, UserType } from '../../config/constants';
 import { Donor } from '../donations/entities/donor.entity';
 import { Staff } from '../users/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
@@ -62,6 +62,9 @@ export class AuthService {
     }
 
     const identifier = email || phone;
+    if(!identifier){
+        throw new BadRequestException('Valid identifier is required');
+    }
     const user = await this.validateUser(identifier, password);
 
     if (!user) {
@@ -82,7 +85,7 @@ export class AuthService {
     const { password: _, ...userWithoutPassword } = user;
 
     return {
-      user: userWithoutPassword,
+      user: userWithoutPassword as any,
       tokens,
       requiresVerification: !user.isVerified,
     };
@@ -99,18 +102,18 @@ export class AuthService {
 
     // Format phone number
     const formattedPhone = this.helpers.formatPhoneNumber(phone);
-
-    // Create user
-    const user = this.usersRepository.create({
-      email,
+     // Create user
+    const userData : Partial<User> = {
+      email: email || null,
       phone: formattedPhone,
       password,
       userType,
-      language: language || 'en',
+      language: language || Language.EN,
       isVerified: false, // Require email/phone verification
       verificationToken: this.helpers.generateRandomToken(),
-    });
+    };
 
+    const user = this.usersRepository.create(userData as User);
     await this.usersRepository.save(user);
 
     // Create profile based on user type
@@ -126,7 +129,7 @@ export class AuthService {
     await this.sendVerification(user);
 
     return {
-      user: userWithoutPassword,
+      user: userWithoutPassword as any,
       tokens,
       verificationRequired: true,
     };
@@ -156,11 +159,13 @@ export class AuthService {
         const staff = this.staffRepository.create({
           user,
           fullName,
-          role: 'admin',
+          role: StaffRole.ADMIN,
           permissions: ['*'], // All permissions
         });
         await this.staffRepository.save(staff);
         break;
+      default:
+        throw new BadRequestException(`Unsupported user type: ${userType}`);
     }
   }
 
@@ -191,11 +196,20 @@ export class AuthService {
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
     const { email, phone } = forgotPasswordDto;
     
-    if (!email && !phone) {
+      if (!email && !phone) {
       throw new BadRequestException('Email or phone is required');
     }
 
-    const user = await this.usersService.findByEmailOrPhone(email || phone);
+   // Type guard to ensure identifier is not undefined
+    const getIdentifier = (): string => {
+      if (email) return email;
+      if (phone) return phone;
+      throw new BadRequestException('Valid identifier is required');
+    };
+
+    const identifier = getIdentifier();
+
+    const user = await this.usersService.findByEmailOrPhone(identifier);
     
     if (!user) {
       // Don't reveal that user doesn't exist for security

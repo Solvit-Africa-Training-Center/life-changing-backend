@@ -7,7 +7,7 @@ export interface Tokens {
 
 export interface JwtPayload {
   sub: string; // user id
-  email: string;
+  email: string | null;
   phone: string;
   userType: string;
   isVerified: boolean;

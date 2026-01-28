@@ -30,7 +30,9 @@ export class RefreshTokenStrategy extends PassportStrategy(
 
   async validate(req: any, payload: any): Promise<User> {
     const refreshToken = req.get('Authorization').replace('Bearer ', '').trim();
-    
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
     const user = await this.usersService.findById(payload.sub);
     
     if (!user) {
@@ -41,7 +43,8 @@ export class RefreshTokenStrategy extends PassportStrategy(
       throw new UnauthorizedException('User account is deactivated');
     }
 
-    // You can store the refresh token in user context if needed
-    return { ...user, refreshToken };
+    req.refreshToken = refreshToken;
+    
+    return user;
   }
 }
