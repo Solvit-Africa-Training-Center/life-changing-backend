@@ -25,7 +25,7 @@ async function seedData() {
 
   // Initialize the DataSource
   await dataSource.initialize();
-  
+
   console.log('🌱 Starting seed data...');
 
   // Check if admin user already exists
@@ -45,26 +45,27 @@ async function seedData() {
     adminUser.language = Language.EN;
     adminUser.isVerified = true;
     adminUser.isActive = true;
-    
+
     await dataSource.manager.save(adminUser);
     console.log('✅ Admin user created');
 
     // Also create a Staff record for the admin
     const adminStaff = new Staff();
     adminStaff.user = adminUser;
+    adminStaff.fullName = 'System Administrator';
     adminStaff.role = StaffRole.SUPER_ADMIN;
     adminStaff.department = 'Administration';
     adminStaff.employeeId = 'ADMIN001';
     adminStaff.hireDate = new Date();
     adminStaff.isActive = true;
-    
+
     await dataSource.manager.save(adminStaff);
     console.log('✅ Admin staff record created');
   }
 
   // Create default programs if they don't exist
   const existingPrograms = await dataSource.manager.find(Program);
-  
+
   if (existingPrograms.length === 0) {
     const programs = [
       {

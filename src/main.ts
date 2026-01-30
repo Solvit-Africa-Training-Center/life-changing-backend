@@ -2,45 +2,22 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import helmet from 'helmet';
-import compression from 'compression';
-import rateLimit from 'express-rate-limit';
 
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { LoggingMiddleware } from './common/middleware/logging.middleware';
-import { API_PREFIX } from './config/constants';
 import { AppModule } from './app.module';
+import { BeneficiariesModule } from './modules/beneficiaries/beneficiaries.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-  const reflector = app.get(Reflector);
 
-  // Global middleware
-  app.use(helmet());
-  app.use(compression());
-  app.use(new LoggingMiddleware().use);
-  
-  // Rate limiting
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // limit each IP to 100 requests per windowMs
-      message: 'Too many requests from this IP, please try again later.',
-    }),
-  );
+  // Simplified middleware for debugging
+  app.enableCors();
 
-  // CORS
-  app.enableCors({
-    origin: configService.get('config.frontendUrl'),
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
-  });
-
-  // Global prefix
-  app.setGlobalPrefix(API_PREFIX);
+  // Global prefix - changed from /api/v1 to /api to avoid double /v1/v1
+  app.setGlobalPrefix('api');
 
   // Versioning
   app.enableVersioning({
@@ -71,26 +48,29 @@ async function bootstrap() {
       .setDescription('Life-Changing Endeavor Organization API Documentation')
       .setVersion('1.0')
       .addBearerAuth()
-      .addTag('auth', 'Authentication endpoints')
-      .addTag('users', 'User management')
       .addTag('beneficiaries', 'Beneficiary management')
-      .addTag('donations', 'Donation processing')
-      .addTag('programs', 'Program management')
-      .addTag('ussd', 'USSD integration')
-      .addTag('admin', 'Admin dashboard')
       .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+    const document = SwaggerModule.createDocument(app, config, {
+      include: [BeneficiariesModule, AuthModule],
+    });
+
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+        docExpansion: 'list',
+        filter: true,
+        displayRequestDuration: true,
+      },
+      customSiteTitle: 'LCEO API Docs',
+    });
   }
 
-  const port = configService.get('config.port');
+  const port = 3000;
   await app.listen(port);
-  
-  console.log(`🚀 Application is running on: ${await app.getUrl()}`);
-  if (configService.get('config.features.enableSwagger')) {
-    console.log(`📚 API Documentation: ${await app.getUrl()}/api/docs`);
-  }
+
+  console.log(`🚀 Application is running on: http://localhost:${port}`);
+  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

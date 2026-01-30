@@ -142,6 +142,13 @@ export enum DocumentType {
   OTHER = 'other',
 }
 
+// Document Status
+export enum DocumentStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 // Notification Types
 export enum NotificationType {
   DONATION_RECEIPT = 'donation_receipt',

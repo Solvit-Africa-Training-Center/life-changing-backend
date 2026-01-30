@@ -1,14 +1,14 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
   JoinColumn,
-  CreateDateColumn, 
-  ManyToOne 
+  CreateDateColumn,
+  ManyToOne
 } from 'typeorm';
 import { Beneficiary } from './beneficiary.entity';
 import { Staff } from '../../users/entities/staff.entity';
-import { DocumentType } from '../../../config/constants';
+import { DocumentType, DocumentStatus } from '../../../config/constants';
 
 @Entity('beneficiary_documents')
 export class BeneficiaryDocument {
@@ -42,8 +42,15 @@ export class BeneficiaryDocument {
   @JoinColumn({ name: 'uploaded_by' })
   uploadedBy: Staff;
 
-  @Column({ default: false })
-  verified: boolean;
+  @Column({
+    type: 'enum',
+    enum: DocumentStatus,
+    default: DocumentStatus.PENDING,
+  })
+  status: DocumentStatus;
+
+  @Column({ name: 'rejection_reason', nullable: true })
+  rejectionReason: string;
 
   @ManyToOne(() => Staff, { nullable: true })
   @JoinColumn({ name: 'verified_by' })
