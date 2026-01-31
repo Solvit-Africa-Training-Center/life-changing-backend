@@ -1,10 +1,10 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
-  UpdateDateColumn, 
-  OneToMany 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { Beneficiary } from '../../beneficiaries/entities/beneficiary.entity';
 import { Project } from './project.entity';

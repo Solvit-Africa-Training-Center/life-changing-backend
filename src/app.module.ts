@@ -19,26 +19,28 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ContentModule } from './modules/content/content.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 
-
-
 @Module({
   imports: [
     // Core modules
     ConfigurationModule,
     DatabaseModule,
-    
+
     // Rate limiting
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 1 minute in milliseconds
-      limit: 100, // 100 requests per ttl
-    }]),
-    
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60, // seconds (IMPORTANT: throttler uses seconds)
+          limit: 100,
+        },
+      ],
+    }),
+
     // Health checks
     TerminusModule,
-    
+
     // Task scheduling
     ScheduleModule.forRoot(),
-    
+
     // Queue processing
     BullModule.forRoot({
       redis: {
@@ -46,7 +48,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
         port: 6379,
       },
     }),
-    
+
     // Feature modules
     AuthModule,
     UsersModule,
@@ -63,8 +65,6 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggingMiddleware)
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
+    consumer.apply(LoggingMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

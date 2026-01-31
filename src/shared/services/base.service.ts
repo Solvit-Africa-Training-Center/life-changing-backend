@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { 
-  Repository, 
-  FindOptionsOrder, 
-  DeepPartial, 
+import {
+  Repository,
+  FindOptionsOrder,
+  DeepPartial,
   QueryDeepPartialEntity,
-  FindOptionsWhere 
+  FindOptionsWhere,
 } from 'typeorm';
 import { PaginationParams, PaginatedResponse } from '../interfaces/pagination.interface';
 import { BaseEntity } from '../interfaces/base.entity.interface';
+import { ProgramStatus } from 'src/config/constants';
 
 @Injectable()
 export abstract class BaseService<T extends BaseEntity> {
@@ -15,19 +16,22 @@ export abstract class BaseService<T extends BaseEntity> {
 
   async paginate(
     params: PaginationParams,
+    p0: { status: ProgramStatus.ACTIVE },
+    p1: { projects: boolean },
+    p2: string[][],
     where?: FindOptionsWhere<T> | FindOptionsWhere<T>[],
     relations?: string[],
   ): Promise<PaginatedResponse<T>> {
     const page = params.page || 1;
     const limit = params.limit || 20;
     const skip = (page - 1) * limit;
-    
+
     // Type-safe order configuration
     const sortBy = (params.sortBy || 'createdAt') as keyof T;
     const sortOrder = params.sortOrder || 'DESC';
-    
+
     const order: FindOptionsOrder<T> = {
-      [sortBy]: sortOrder
+      [sortBy]: sortOrder,
     } as FindOptionsOrder<T>;
 
     const [data, total] = await this.repository.findAndCount({

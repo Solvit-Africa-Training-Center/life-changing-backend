@@ -33,43 +33,43 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       username: this.configService.get('config.database.username'),
       password: this.configService.get('config.database.password'),
       database: this.configService.get('config.database.database'),
-      
+
       entities: [
         // User Management
         User,
         Staff,
-        
+
         // Beneficiary Management
         Beneficiary,
         WeeklyTracking,
         Goal,
         BeneficiaryDocument,
         EmergencyContact,
-        
+
         // Donation Management
         Donor,
         Donation,
         RecurringDonation,
-        
+
         // Program Management
         Program,
         Project,
         ImpactMetric,
-        
+
         // Communication & Integration
         UssdSession,
         Notification,
-        
+
         // Content Management
         Story,
-        
+
         // System & Admin
         ActivityLog,
-        
+
         // Integration (Critical!)
         WebhookEvent,
       ],
-      
+
       synchronize: this.configService.get('config.database.synchronize'),
       logging: this.configService.get('config.database.logging'),
       migrations: ['dist/migrations/*.js'],

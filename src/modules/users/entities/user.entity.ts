@@ -1,13 +1,13 @@
-// import { 
-//   Entity, 
-//   PrimaryGeneratedColumn, 
-//   Column, 
-//   CreateDateColumn, 
-//   UpdateDateColumn, 
+// import {
+//   Entity,
+//   PrimaryGeneratedColumn,
+//   Column,
+//   CreateDateColumn,
+//   UpdateDateColumn,
 //   OneToOne,
 //   OneToMany,
-//   BeforeInsert, 
-//   BeforeUpdate 
+//   BeforeInsert,
+//   BeforeUpdate
 // } from 'typeorm';
 // import { Exclude } from 'class-transformer';
 // import * as bcrypt from 'bcrypt';
@@ -113,14 +113,14 @@
 //     return bcrypt.compare(attempt, this.password);
 //   }
 // }
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   UpdateDateColumn,
   BeforeInsert,
-  BeforeUpdate
+  BeforeUpdate,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';

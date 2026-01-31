@@ -78,6 +78,7 @@ export enum ProgramStatus {
   ACTIVE = 'active',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',
+  INACTIVE = 'INACTIVE',
 }
 
 // Payment Methods

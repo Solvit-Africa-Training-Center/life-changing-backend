@@ -28,7 +28,7 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:rebuild": "docker-compose down && docker-compose up --build -d",
-    "prepare": "husky install",
+    "prepare": "if [ \"$NODE_ENV\" != \"production\" ]; then husky install; fi",
     "precommit": "npm run lint && npm run format",
     "prepush": "npm run test",
     "typecheck": "tsc --noEmit",

@@ -1,12 +1,12 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   JoinColumn,
-  UpdateDateColumn, 
-  ManyToOne, 
-  OneToMany 
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { Program } from './program.entity';
 import { Donation } from '../../donations/entities/donation.entity';
