@@ -20,6 +20,9 @@ export class User {
   @Column({ unique: true, nullable: true })
   email: string | null; // Make nullable
 
+  @Column({ name: 'full_name' })
+  fullName: string;
+
   @Column({ unique: true })
   phone: string;
 
@@ -89,6 +92,10 @@ export class User {
     return bcrypt.compare(attempt, this.password);
   }
 }
+
+
+
+
 // import { 
 //   Entity, 
 //   PrimaryGeneratedColumn, 

@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv';
 import { User } from '../src/modules/users/entities/user.entity';
 import { UserType, Language, ProgramCategory, ProgramStatus, StaffRole } from '../src/config/constants';
 import { Program } from '../src/modules/programs/entities/program.entity';
-import { Staff } from '../src/modules/users/entities/staff.entity';
+import { Staff } from '../src/modules/admin/entities/staff.entity';
 
 // Load environment variables
 dotenv.config();

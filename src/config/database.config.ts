@@ -16,7 +16,7 @@ import { ImpactMetric } from '../modules/programs/entities/impact-metric.entity'
 import { Program } from '../modules/programs/entities/program.entity';
 import { Project } from '../modules/programs/entities/project.entity';
 import { Notif } from '../modules/notifications/entities/notification.entity';
-import { Staff } from '../modules/users/entities/staff.entity';
+import { Staff } from '../modules/admin/entities/staff.entity';
 import { User } from '../modules/users/entities/user.entity';
 import { UssdSession } from '../modules/ussd/entities/ussd-session.entity';
 import { WebhookEvent } from '../modules/webhooks/entities/webhook-event.entity';

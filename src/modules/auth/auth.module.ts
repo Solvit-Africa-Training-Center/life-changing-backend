@@ -13,7 +13,7 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { User } from '../users/entities/user.entity';
 import { Donor } from '../donations/entities/donor.entity';
-import { Staff } from '../users/entities/staff.entity';
+import { Staff } from '../admin/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
 import { Helpers } from '../../shared/utils/helpers';
 import { NotificationsModule } from '../notifications/notifications.module';

@@ -8,7 +8,7 @@ import {
   JoinColumn, 
   OneToMany 
 } from 'typeorm';
-import { User } from './user.entity';
+import { User } from '../../users/entities/user.entity';
 import { WeeklyTracking } from '../../beneficiaries/entities/weekly-tracking.entity';
 import { BeneficiaryDocument } from '../../beneficiaries/entities/beneficiary-document.entity';
 import { ImpactMetric } from '../../programs/entities/impact-metric.entity';

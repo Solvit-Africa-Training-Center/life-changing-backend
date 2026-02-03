@@ -12,7 +12,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { StringValue } from 'ms';
+import ms from 'ms';
+// import { StringValue } from 'ms';
 
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
@@ -27,7 +28,7 @@ import { Tokens, JwtPayload } from './interfaces/tokens.interface';
 import { LoginResponse, RegisterResponse } from './interfaces/auth-response.interface';
 import { Language, StaffRole, UserType, NotificationType, NotificationChannel } from '../../config/constants';
 import { Donor } from '../donations/entities/donor.entity';
-import { Staff } from '../users/entities/staff.entity';
+import { Staff } from '../admin/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
 import { NotificationService } from '../notifications/notifications.service';
 import { TokenBlacklistService } from './token-blacklist.service';
@@ -296,20 +297,26 @@ export class AuthService {
       isVerified: user.isVerified,
     };
 
+    const expiresIn = this.configService.get<string>('config.jwt.expiresIn') ?? '24h';
+    const refreshExpiresIn = this.configService.get<string>('config.jwt.refreshExpiresIn') ?? '7d';
+
+    const expiresInSeconds = Math.floor(ms(expiresIn as ms.StringValue) / 1000);
+    const refreshExpiresInSeconds = Math.floor(ms(refreshExpiresIn as ms.StringValue) / 1000);
+
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('config.jwt.secret'),
-      expiresIn: (this.configService.get<string>('config.jwt.expiresIn') ?? '24h') as StringValue,
+      expiresIn: expiresInSeconds,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('config.jwt.refreshSecret'),
-      expiresIn: (this.configService.get<string>('config.jwt.refreshExpiresIn') ?? '7d') as StringValue,
+      expiresIn: refreshExpiresInSeconds,
     });
 
     return {
       accessToken,
       refreshToken,
-      expiresIn: 24 * 60 * 60, // 24 hours in seconds
+      expiresIn: expiresInSeconds, // 24 hours in seconds
       tokenType: 'Bearer',
     };
   }
