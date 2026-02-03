@@ -57,7 +57,10 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
 
     if (file) {
       // Handle file upload via multer
-      const uploadResult = await this.cloudinaryService.uploadFile(file, `beneficiary_${beneficiaryId}_documents`);
+      const uploadResult = await this.cloudinaryService.uploadFile(
+        file, 
+        `beneficiary_${beneficiaryId}_documents`
+      );
       fileUrl = uploadResult.url;
       publicId = uploadResult.publicId;
       fileName = file.originalname;
@@ -85,9 +88,9 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
       fileName,
       fileSize,
       mimeType,
+      publicId,
       uploadedBy,
       uploadedByType,
-      publicId,
       verified: false,
     });
 
@@ -98,8 +101,14 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
     beneficiaryId: string,
     paginationParams: PaginationParams
   ): Promise<PaginatedResponse<BeneficiaryDocument>> {
-    const where: FindOptionsWhere<BeneficiaryDocument> = { beneficiary: { id: beneficiaryId } };
-    return this.paginate(paginationParams, where, ['beneficiary', 'uploadedBy', 'verifiedBy']);
+    const where: FindOptionsWhere<BeneficiaryDocument> = { 
+      beneficiary: { id: beneficiaryId } 
+    };
+    return this.paginate(paginationParams, where, [
+      'beneficiary', 
+      'uploadedBy', 
+      'verifiedBy'
+    ]);
   }
 
   async getDocumentsByType(
@@ -111,7 +120,10 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
       beneficiary: { id: beneficiaryId },
       documentType,
     };
-    return this.paginate(paginationParams, where, ['beneficiary', 'uploadedBy']);
+    return this.paginate(paginationParams, where, [
+      'beneficiary', 
+      'uploadedBy'
+    ]);
   }
 
   async verifyDocument(
@@ -127,7 +139,7 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
 
     document.verified = true;
     document.verifiedAt = new Date();
-    document.verifiedBy = { id: verifiedById } as any;
+    document.verifiedBy = { id: verifiedById } as Staff;
 
     return await this.documentsRepository.save(document);
   }
@@ -140,9 +152,7 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
     }
 
     // Delete from Cloudinary
-    if (document.publicId) {
-      await this.cloudinaryService.deleteFile(document.publicId);
-    }
+    await this.cloudinaryService.deleteFile(document.publicId);
 
     await this.documentsRepository.delete(documentId);
   }

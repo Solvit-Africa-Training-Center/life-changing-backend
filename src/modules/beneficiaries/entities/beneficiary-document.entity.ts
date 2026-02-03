@@ -1,3 +1,4 @@
+// src/modules/beneficiaries/entities/beneficiary-document.entity.ts
 import { 
   Entity, 
   PrimaryGeneratedColumn, 
@@ -9,7 +10,7 @@ import {
 import { Beneficiary } from './beneficiary.entity';
 import { Staff } from '../../admin/entities/staff.entity';
 import { DocumentType, UserType } from '../../../config/constants';
-import { User } from 'src/modules/users/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('beneficiary_documents')
 export class BeneficiaryDocument {
@@ -39,12 +40,19 @@ export class BeneficiaryDocument {
   @Column({ name: 'mime_type' })
   mimeType: string;
 
+  @Column({ name: 'public_id' })
+  publicId: string;
+
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'uploaded_by' })
   uploadedBy: User;
 
-  @Column({ name: 'uploaded_by_type' })
-  uploadedByType: UserType.BENEFICIARY | UserType.ADMIN;
+  @Column({ 
+    name: 'uploaded_by_type',
+    type: 'enum',
+    enum: UserType,
+  })
+  uploadedByType: UserType;
 
   @Column({ default: false })
   verified: boolean;
