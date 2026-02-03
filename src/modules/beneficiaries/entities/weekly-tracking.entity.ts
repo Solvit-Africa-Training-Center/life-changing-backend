@@ -9,7 +9,7 @@ import {
 import { Beneficiary } from './beneficiary.entity';
 import { Staff } from '../../admin/entities/staff.entity';
 import { AttendanceStatus, TaskStatus, UserType } from '../../../config/constants';
-import { User } from 'src/modules/users/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('weekly_trackings')
 export class WeeklyTracking {
@@ -76,8 +76,12 @@ export class WeeklyTracking {
   @JoinColumn({ name: 'submitted_by' })
   submittedBy: User;
   
-  @Column({ name: 'submitted_by_type' })
-  submittedByType: UserType.BENEFICIARY |  UserType.ADMIN;
+  @Column({
+    name: 'submitted_by_type',
+    type: 'enum',
+    enum: UserType,
+  })
+  submittedByType: UserType;
 
   @Column({ name: 'is_offline_sync', default: false })
   isOfflineSync: boolean;

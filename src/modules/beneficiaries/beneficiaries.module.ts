@@ -9,7 +9,6 @@ import { DocumentsController } from './controllers/documents.controller';
 import { TrackingController } from './controllers/tracking.controller';
 import { GoalsController } from './controllers/goals.controller';
 import { EmergencyContactsController } from './controllers/emergency-contacts.controller';
-import { UssdController } from './controllers/ussd.controller';
 import { BeneficiariesService } from './services/beneficiaries.service';
 import { WeeklyTrackingService } from './services/weekly-tracking.service';
 import { BeneficiaryDocumentsService } from './services/beneficiary-documents.service';
@@ -23,6 +22,7 @@ import { EmergencyContact } from './entities/emergency-contact.entity';
 import { User } from '../users/entities/user.entity';
 import { Program } from '../programs/entities/program.entity';
 import { Staff } from '../admin/entities/staff.entity';
+import { UssdController } from '../ussd/ussd.controller';
 
 @Module({
   imports: [

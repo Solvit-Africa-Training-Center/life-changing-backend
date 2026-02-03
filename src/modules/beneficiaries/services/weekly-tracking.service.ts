@@ -5,6 +5,7 @@ import { Repository, FindOptionsWhere, Between } from 'typeorm';
 import { WeeklyTracking } from '../entities/weekly-tracking.entity';
 import { Beneficiary } from '../entities/beneficiary.entity';
 import { User } from '../../users/entities/user.entity';
+import { Staff } from '../../admin/entities/staff.entity';
 import { BaseService } from '../../../shared/services/base.service';
 import { PaginationParams, PaginatedResponse } from '../../../shared/interfaces/pagination.interface';
 import { CreateTrackingDto, UpdateTrackingDto } from '../dto/create-tracking.dto';
@@ -19,6 +20,8 @@ export class WeeklyTrackingService extends BaseService<WeeklyTracking> {
     private beneficiariesRepository: Repository<Beneficiary>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Staff)
+    private staffRepository: Repository<Staff>,
   ) {
     super(weeklyTrackingRepository);
   }
@@ -85,8 +88,14 @@ export class WeeklyTrackingService extends BaseService<WeeklyTracking> {
     beneficiaryId: string,
     paginationParams: PaginationParams
   ): Promise<PaginatedResponse<WeeklyTracking>> {
-    const where: FindOptionsWhere<WeeklyTracking> = { beneficiary: { id: beneficiaryId } };
-    return this.paginate(paginationParams, where, ['beneficiary', 'submittedBy', 'verifiedBy']);
+    const where: FindOptionsWhere<WeeklyTracking> = { 
+      beneficiary: { id: beneficiaryId } 
+    };
+    return this.paginate(paginationParams, where, [
+      'beneficiary', 
+      'submittedBy', 
+      'verifiedBy'
+    ]);
   }
 
   async getTrackingsByDateRange(
@@ -97,7 +106,10 @@ export class WeeklyTrackingService extends BaseService<WeeklyTracking> {
     const where: FindOptionsWhere<WeeklyTracking> = {
       weekEnding: Between(startDate, endDate),
     };
-    return this.paginate(paginationParams, where, ['beneficiary', 'submittedBy']);
+    return this.paginate(paginationParams, where, [
+      'beneficiary', 
+      'submittedBy'
+    ]);
   }
 
   async getAttendanceStats(beneficiaryId: string) {
@@ -122,8 +134,16 @@ export class WeeklyTrackingService extends BaseService<WeeklyTracking> {
       throw new NotFoundException('Tracking not found');
     }
 
+    const verifiedBy = await this.staffRepository.findOne({
+      where: { id: verifiedById },
+    });
+
+    if (!verifiedBy) {
+      throw new NotFoundException('Staff not found');
+    }
+
     tracking.verifiedAt = new Date();
-    tracking.verifiedBy = { id: verifiedById } as any;
+    tracking.verifiedBy = verifiedBy;
     
     if (notes) {
       tracking.notes = notes;
