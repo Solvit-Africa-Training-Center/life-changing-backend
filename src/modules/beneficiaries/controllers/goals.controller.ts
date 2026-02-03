@@ -1,4 +1,3 @@
-// src/modules/beneficiaries/controllers/goals.controller.ts
 import {
   Controller,
   Get,
@@ -8,30 +7,40 @@ import {
   Param,
   Query,
   UseGuards,
-  Req,
+  Delete,
   HttpStatus,
+  HttpCode,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { CurrentBeneficiary } from '../../../common/decorators/current-beneficiary.decorator';
 import { GoalsService } from '../services/goals.service';
 import { CreateGoalDto, UpdateGoalDto } from '../dto/create-goal.dto';
 import { GoalType, GoalStatus, UserType } from '../../../config/constants';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
+import { Beneficiary } from '../entities/beneficiary.entity';
+import { Goal } from '../entities/goal.entity';
 
 @ApiTags('beneficiaries')
 @Controller('beneficiaries/goals')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class GoalsController {
-  constructor(private readonly goalsService: GoalsService) {}
+  constructor(
+    private readonly goalsService: GoalsService,
+  ) {}
 
   @Post()
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
   @ApiOperation({ summary: 'Create a goal' })
-  async createGoal(@Req() req, @Body() createGoalDto: CreateGoalDto) {
-    const beneficiary = await this.getBeneficiaryFromRequest(req);
+  async createGoal(
+    @CurrentBeneficiary() beneficiary: Beneficiary,
+    @Body() createGoalDto: CreateGoalDto
+  ) {
     return this.goalsService.createGoal(beneficiary.id, createGoalDto);
   }
 
@@ -41,10 +50,9 @@ export class GoalsController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getGoals(
-    @Req() req,
+    @CurrentBeneficiary() beneficiary: Beneficiary,
     @Query() paginationParams: PaginationParams
   ) {
-    const beneficiary = await this.getBeneficiaryFromRequest(req);
     return this.goalsService.getBeneficiaryGoals(beneficiary.id, paginationParams);
   }
 
@@ -52,11 +60,10 @@ export class GoalsController {
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
   @ApiOperation({ summary: 'Get goals by type' })
   async getGoalsByType(
-    @Req() req,
+    @CurrentBeneficiary() beneficiary: Beneficiary,
     @Param('goalType') goalType: GoalType,
     @Query() paginationParams: PaginationParams
   ) {
-    const beneficiary = await this.getBeneficiaryFromRequest(req);
     return this.goalsService.getGoalsByType(beneficiary.id, goalType, paginationParams);
   }
 
@@ -64,11 +71,10 @@ export class GoalsController {
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
   @ApiOperation({ summary: 'Get goals by status' })
   async getGoalsByStatus(
-    @Req() req,
+    @CurrentBeneficiary() beneficiary: Beneficiary,
     @Param('status') status: GoalStatus,
     @Query() paginationParams: PaginationParams
   ) {
-    const beneficiary = await this.getBeneficiaryFromRequest(req);
     return this.goalsService.getGoalsByStatus(beneficiary.id, status, paginationParams);
   }
 
@@ -77,20 +83,64 @@ export class GoalsController {
   @ApiOperation({ summary: 'Update goal progress' })
   async updateGoalProgress(
     @Param('id') id: string,
-    @Body() body: { progress: number }
+    @Body() body: { progress: number },
+    @CurrentBeneficiary() beneficiary: Beneficiary
   ) {
+    await this.checkGoalOwnership(id, beneficiary.id);
     return this.goalsService.updateGoalProgress(id, body.progress);
   }
 
   @Get('stats')
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
   @ApiOperation({ summary: 'Get goal statistics' })
-  async getGoalStats(@Req() req) {
-    const beneficiary = await this.getBeneficiaryFromRequest(req);
+  async getGoalStats(@CurrentBeneficiary() beneficiary: Beneficiary) {
     return this.goalsService.getGoalStats(beneficiary.id);
   }
 
-  private async getBeneficiaryFromRequest(req: any) {
-    // Implementation similar to other controllers
+  @Put(':id')
+  @Roles(UserType.BENEFICIARY, UserType.ADMIN)
+  @ApiOperation({ summary: 'Update goal' })
+  async updateGoal(
+    @Param('id') id: string,
+    @Body() updateGoalDto: UpdateGoalDto,
+    @CurrentBeneficiary() beneficiary: Beneficiary
+  ) {
+    await this.checkGoalOwnership(id, beneficiary.id);
+    return this.goalsService.update(id, updateGoalDto);
+  }
+
+  @Delete(':id')
+  @Roles(UserType.BENEFICIARY, UserType.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete goal' })
+  async deleteGoal(
+    @Param('id') id: string,
+    @CurrentBeneficiary() beneficiary: Beneficiary
+  ) {
+    await this.checkGoalOwnership(id, beneficiary.id);
+    await this.goalsService.delete(id);
+  }
+
+  @Get(':id')
+  @Roles(UserType.BENEFICIARY, UserType.ADMIN)
+  @ApiOperation({ summary: 'Get goal by ID' })
+  async getGoalById(
+    @Param('id') id: string,
+    @CurrentBeneficiary() beneficiary: Beneficiary
+  ) {
+    await this.checkGoalOwnership(id, beneficiary.id);
+    return this.goalsService.findOne(id, ['beneficiary']);
+  }
+
+  private async checkGoalOwnership(goalId: string, beneficiaryId: string): Promise<void> {
+    const goal = await this.goalsService.findOne(goalId, ['beneficiary']);
+    
+    if (!goal) {
+      throw new NotFoundException('Goal not found');
+    }
+    
+    if (goal.beneficiary.id !== beneficiaryId) {
+      throw new ForbiddenException('You do not have permission to access this goal');
+    }
   }
 }
