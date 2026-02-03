@@ -9,12 +9,12 @@ import * as moment from 'moment';
 import { UssdSession } from './entities/ussd-session.entity';
 import { UssdRequestDto, UssdResponseDto, UssdStatsDto } from './dto/ussd-request.dto';
 import { UsersService } from '../users/users.service';
-import { BeneficiariesService } from '../beneficiaries/beneficiaries.service';
+import { BeneficiariesService } from '../beneficiaries/services/beneficiaries.service';
 import { StaffService } from '../users/staff.service';
 import { WeeklyTrackingService } from '../beneficiaries/weekly-tracking.service';
 import { NotificationService } from '../notifications/notifications.service';
 import { GoalsService } from '../goals/goals.service';
-import { DonationsService } from '../donations/donations.service';
+import { DonationsService } from '../donations/services/donations.service';
 import { ProgramsService } from '../programs/programs.service';
 
 import {
