@@ -1,6 +1,6 @@
 // src/shared/services/cloudinary.service.ts
 import { Injectable } from '@nestjs/common';
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { Readable } from 'stream';
 
 @Injectable()
@@ -23,12 +23,17 @@ export class CloudinaryService {
           folder,
           resource_type: 'auto',
         },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve({
-            url: result.secure_url,
-            publicId: result.public_id,
-          });
+        (error, result: UploadApiResponse) => {
+          if (error) {
+            reject(error);
+          } else if (!result) {
+            reject(new Error('Upload failed: No result returned'));
+          } else {
+            resolve({
+              url: result.secure_url,
+              publicId: result.public_id,
+            });
+          }
         }
       );
 
@@ -47,10 +52,14 @@ export class CloudinaryService {
     base64String: string,
     folder: string = 'beneficiary_documents'
   ): Promise<{ url: string; publicId: string }> {
-    const result = await cloudinary.uploader.upload(base64String, {
+    const result: UploadApiResponse = await cloudinary.uploader.upload(base64String, {
       folder,
       resource_type: 'auto',
     });
+    
+    if (!result) {
+      throw new Error('Upload failed: No result returned');
+    }
     
     return {
       url: result.secure_url,
