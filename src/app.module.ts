@@ -4,6 +4,7 @@ import { TerminusModule } from '@nestjs/terminus';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 import { ConfigurationModule } from './config/configuration.module';
 import { DatabaseModule } from './shared/database/database.module';
@@ -20,10 +21,27 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ContentModule } from './modules/content/content.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 
-
-
 @Module({
   imports: [
+      // Add RedisModule here
+      RedisModule.forRootAsync({
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => {
+          const isDocker = process.env.DOCKER === 'true';
+          return {
+            type: 'single',
+            // Use service name in Docker, external IP on local
+            url: isDocker 
+              ? `redis://redis:6379`  // Docker internal
+              : `redis://${configService.get('config.redis.host')}:${configService.get('config.redis.port')}`,
+            options: {
+              password: configService.get('config.redis.password'),
+            },
+          };
+        },
+        inject: [ConfigService],
+      }),
+
     // Core modules
     ConfigurationModule,
     DatabaseModule,
@@ -43,23 +61,32 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     // Queue processing
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        redis: {
-          host: configService.get('config.redis.host') || 'localhost',
-          port: configService.get('config.redis.port') || 6379,
-          password: configService.get('config.redis.password'),
-        },
-        defaultJobOptions: {
-          removeOnComplete: 100,
-          removeOnFail: 100,
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 1000,
+      useFactory: async (configService: ConfigService) => {
+        const isDocker = process.env.DOCKER === 'true';
+        return {
+          redis: {
+            host: isDocker 
+              ? 'redis'  // Docker service name
+              : configService.get('config.redis.host') || 'localhost',
+            port: configService.get('config.redis.port') || 6379,
+            password: configService.get('config.redis.password'),
           },
-        },
-      }),
+          defaultJobOptions: {
+            removeOnComplete: 100,
+            removeOnFail: 100,
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 1000,
+            },
+          },
+         }
+      },
       inject: [ConfigService],
+    }),
+
+    BullModule.registerQueue({
+      name: 'notifications',
     }),
 
     // Feature modules

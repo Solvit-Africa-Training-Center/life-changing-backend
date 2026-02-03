@@ -21,15 +21,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
         ignoreExpiration: false,
         secretOrKey: secret,
-        passReqToCallback: true, 
     });
   }
 
-  async validate(req: any, payload: any): Promise<User> {
-     // Store the token in request for logout
-    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
-    req.jwtToken = token;
-    
+  async validate(payload: any): Promise<User> {
     const user = await this.usersService.findById(payload.sub);
     
     if (!user) {
@@ -42,4 +37,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     return user;
   }
+  // async validate(req: any, payload: any): Promise<User> {
+  //    // Store the token in request for logout
+  //   const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+  //   req.jwtToken = token;
+    
+  //   const user = await this.usersService.findById(payload.sub);
+    
+  //   if (!user) {
+  //     throw new UnauthorizedException('User not found');
+  //   }
+
+  //   if (!user.isActive) {
+  //     throw new UnauthorizedException('User account is deactivated');
+  //   }
+
+  //   return user;
+  // }
 }

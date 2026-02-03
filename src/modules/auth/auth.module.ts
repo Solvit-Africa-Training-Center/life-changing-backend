@@ -17,16 +17,16 @@ import { Staff } from '../users/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
 import { Helpers } from '../../shared/utils/helpers';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { AdminModule } from '../admin/admin.module';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { ActivityLog } from '../admin/entities/activity-log.entity';
+import { ActivityLogService } from '../admin/activity-log.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Donor, Staff, Beneficiary]),
+    TypeOrmModule.forFeature([User, Donor, Staff, Beneficiary,ActivityLog]),
     UsersModule,
     PassportModule,
     NotificationsModule,
-    AdminModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -46,6 +46,7 @@ import { TokenBlacklistService } from './token-blacklist.service';
     LocalStrategy,
     Helpers,
     TokenBlacklistService,
+    ActivityLogService
   ],
   exports: [AuthService, JwtModule],
 })

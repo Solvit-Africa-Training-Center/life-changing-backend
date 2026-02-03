@@ -1,9 +1,39 @@
-import { Module } from '@nestjs/common';
-import { UssdController } from './ussd.controller';
-import { UssdService } from './ussd.service';
+// src/modules/ussd/ussd.module.ts
+import { Module, Global } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule } from '@nestjs/cache-manager';
 
+import { UssdService } from './ussd.service';
+import { UssdController } from './ussd.controller';
+import { UssdSession } from './entities/ussd-session.entity';
+import { UssdCleanupCron } from './cron/ussd-cleanup.cron';
+import { UsersModule } from '../users/users.module';
+import { BeneficiariesModule } from '../beneficiaries/beneficiaries.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { GoalsModule } from '../goals/goals.module';
+import { DonationsModule } from '../donations/donations.module';
+import { ProgramsModule } from '../programs/programs.module';
+import { CACHE_TTL } from '../../config/constants';
+
+@Global()
 @Module({
+  imports: [
+    TypeOrmModule.forFeature([UssdSession]),
+    ScheduleModule.forRoot(),
+    CacheModule.register({
+      ttl: CACHE_TTL,
+      max: 100,
+    }),
+    UsersModule,
+    BeneficiariesModule,
+    NotificationsModule,
+    GoalsModule,
+    DonationsModule,
+    ProgramsModule,
+  ],
   controllers: [UssdController],
-  providers: [UssdService]
+  providers: [UssdService, UssdCleanupCron],
+  exports: [UssdService, TypeOrmModule],
 })
 export class UssdModule {}

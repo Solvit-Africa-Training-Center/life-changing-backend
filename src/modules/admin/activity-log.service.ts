@@ -21,9 +21,8 @@ export class ActivityLogService {
     ipAddress: string = 'unknown',
     userAgent?: string,
     location?: { country: string; region: string; city: string },
+    description?: string, 
   ): Promise<ActivityLog> {
-    // Calculate changes
-    const changes = this.calculateChanges(oldValues, newValues);
 
     const activityLog = this.activityLogRepository.create({
         user: userId ? ({ id: userId } as any) : undefined,
@@ -32,10 +31,11 @@ export class ActivityLogService {
         entityId,
         oldValues,
         newValues,
-        changes,
+        changes: this.calculateChanges(oldValues, newValues),
         ipAddress,
         userAgent,
         location,
+        description
     } as Partial<ActivityLog>);
 
     return await this.activityLogRepository.save(activityLog);

@@ -26,10 +26,13 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
   constructor(private configService: ConfigService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
+    
+    const isDocker = process.env.DOCKER === 'true';
+
     return {
       type: 'postgres',
-      host: this.configService.get('config.database.host'),
-      port: this.configService.get('config.database.port'),
+      host: isDocker ? 'postgres' : this.configService.get('config.database.host'),
+      port: isDocker ? 5432 : this.configService.get('config.database.port'),
       username: this.configService.get('config.database.username'),
       password: this.configService.get('config.database.password'),
       database: this.configService.get('config.database.database'),
