@@ -23,6 +23,7 @@ import { CreateBeneficiaryDto } from '../dto/create-beneficiary.dto';
 import { UpdateBeneficiaryDto } from '../dto/update-beneficiary.dto';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
 import { BeneficiaryStatus, UserType } from '../../../config/constants';
+import { BeneficiaryStatsDto } from '../dto/beneficiary-stats.dto';
 
 @ApiTags('beneficiaries')
 @Controller('beneficiaries')
@@ -31,13 +32,20 @@ export class BeneficiariesController {
   constructor(private readonly beneficiariesService: BeneficiariesService) {}
 
   @Post('profile')
-  @Roles(UserType.BENEFICIARY)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create beneficiary profile' })
-  @ApiResponse({ status: 201, description: 'Beneficiary profile created' })
-  async createBeneficiaryProfile(@Req() req, @Body() createBeneficiaryDto: CreateBeneficiaryDto) {
-    return this.beneficiariesService.createBeneficiary(req.user.id, createBeneficiaryDto);
+@Roles(UserType.BENEFICIARY)
+@ApiBearerAuth()
+@ApiOperation({ summary: 'Complete beneficiary profile' })
+@ApiResponse({ status: 201, description: 'Beneficiary profile completed' })
+async createBeneficiaryProfile(@Req() req, @Body() createBeneficiaryDto: CreateBeneficiaryDto) {
+  // Check if beneficiary profile was created during registration
+  const existingBeneficiary = await this.beneficiariesService.findBeneficiaryByUserId(req.user.id);
+  
+  if (!existingBeneficiary) {
+    throw new NotFoundException('No beneficiary profile found. Please register first.');
   }
+  // Update with additional details
+  return this.beneficiariesService.updateBeneficiary(existingBeneficiary.id, createBeneficiaryDto);
+}
 
   @Get('profile')
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
@@ -126,7 +134,12 @@ export class BeneficiariesController {
   @Roles(UserType.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get beneficiary statistics (admin only)' })
-  async getBeneficiaryStats() {
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Beneficiary statistics returned',
+    type: BeneficiaryStatsDto 
+    })
+  async getBeneficiaryStats():Promise<BeneficiaryStatsDto>{
     return this.beneficiariesService.getBeneficiaryStats();
   }
 

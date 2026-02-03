@@ -1,4 +1,3 @@
-// src/modules/beneficiaries/services/beneficiaries.service.ts
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
@@ -10,6 +9,7 @@ import { PaginationParams, PaginatedResponse } from '../../../shared/interfaces/
 import { CreateBeneficiaryDto } from '../dto/create-beneficiary.dto';
 import { UpdateBeneficiaryDto } from '../dto/update-beneficiary.dto';
 import { UserType, BeneficiaryStatus } from '../../../config/constants';
+import { BeneficiaryStatsDto } from '../dto/beneficiary-stats.dto';
 
 @Injectable()
 export class BeneficiariesService extends BaseService<Beneficiary> {
@@ -28,42 +28,45 @@ export class BeneficiariesService extends BaseService<Beneficiary> {
     // Check if user exists
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException('User not found');
+        throw new NotFoundException('User not found');
     }
 
     // Check if user already has a beneficiary profile
     const existingBeneficiary = await this.beneficiariesRepository.findOne({
-      where: { user: { id: userId } },
+        where: { user: { id: userId } },
     });
 
     if (existingBeneficiary) {
-      throw new ConflictException('User already has a beneficiary profile');
+        throw new ConflictException('User already has a beneficiary profile');
     }
 
     // Check if program exists
     const program = await this.programsRepository.findOne({
-      where: { id: createBeneficiaryDto.programId },
+        where: { id: createBeneficiaryDto.programId },
     });
 
     if (!program) {
-      throw new NotFoundException('Program not found');
+        throw new NotFoundException('Program not found');
     }
 
     // Update user type
     user.userType = UserType.BENEFICIARY;
     await this.usersRepository.save(user);
 
-    // Parse dates
-    const beneficiaryData: any = { ...createBeneficiaryDto };
-    beneficiaryData.dateOfBirth = new Date(createBeneficiaryDto.dateOfBirth);
-    beneficiaryData.enrollmentDate = new Date(createBeneficiaryDto.enrollmentDate);
-    beneficiaryData.currentCapital = createBeneficiaryDto.startCapital;
-
-    // Create beneficiary profile
+    // Create beneficiary with explicit property assignment
     const beneficiary = this.beneficiariesRepository.create({
-      user,
-      program,
-      ...beneficiaryData,
+        user,
+        program,
+        fullName: createBeneficiaryDto.fullName,
+        dateOfBirth: new Date(createBeneficiaryDto.dateOfBirth),
+        location: createBeneficiaryDto.location,
+        status: createBeneficiaryDto.status,
+        enrollmentDate: new Date(createBeneficiaryDto.enrollmentDate),
+        startCapital: createBeneficiaryDto.startCapital,
+        currentCapital: createBeneficiaryDto.startCapital,
+        businessType: createBeneficiaryDto.businessType,
+        trackingFrequency: createBeneficiaryDto.trackingFrequency,
+        requiresSpecialAttention: createBeneficiaryDto.requiresSpecialAttention || false,
     });
 
     return await this.beneficiariesRepository.save(beneficiary);
@@ -146,7 +149,7 @@ export class BeneficiariesService extends BaseService<Beneficiary> {
     return this.paginate(paginationParams, where.length > 0 ? where : undefined, ['user', 'program']);
   }
 
-  async getBeneficiaryStats(): Promise<any> {
+  async getBeneficiaryStats(): Promise<BeneficiaryStatsDto> {
     const totalBeneficiaries = await this.count();
     
     const byStatus = await this.beneficiariesRepository
@@ -162,7 +165,7 @@ export class BeneficiariesService extends BaseService<Beneficiary> {
       .groupBy('program.name')
       .getRawMany();
 
-    const totalCapital = await this.beneficiariesRepository
+    const totalCapitalResult = await this.beneficiariesRepository
       .createQueryBuilder('beneficiary')
       .select('SUM(beneficiary.current_capital)', 'total')
       .getRawOne();
@@ -171,7 +174,7 @@ export class BeneficiariesService extends BaseService<Beneficiary> {
       totalBeneficiaries,
       byStatus,
       byProgram,
-      totalCapital: parseFloat(totalCapital.total) || 0,
+      totalCapital: parseFloat(totalCapitalResult?.total || '0') || 0,
     };
   }
 }

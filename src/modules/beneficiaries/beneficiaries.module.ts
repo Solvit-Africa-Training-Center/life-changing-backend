@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-// import { BeneficiariesController } from './controllers/beneficiaries.controller';
 // import { DocumentsController } from './controllers/documents.controller';
 // import { TrackingsController } from './controllers/trackings.controller';
 // import { GoalsController } from './controllers/goals.controller';
@@ -15,6 +14,7 @@ import { Goal } from './entities/goal.entity';
 import { EmergencyContact } from './entities/emergency-contact.entity';
 import { UsersModule } from '../users/users.module';
 import { ProgramsModule } from '../programs/programs.module';
+import { BeneficiariesController } from './controllers/beneficiaries.controller';
 
 @Module({
   imports: [
@@ -30,15 +30,15 @@ import { ProgramsModule } from '../programs/programs.module';
   ],
   controllers: [
     BeneficiariesController,
-    DocumentsController,
-    TrackingsController,
-    GoalsController,
+  //   DocumentsController,
+  //   TrackingsController,
+  //   GoalsController,
   ],
   providers: [
     BeneficiariesService,
-    DocumentsService,
-    TrackingsService,
-    GoalsService,
+    // DocumentsService,
+    // TrackingsService,
+    // GoalsService,
   ],
   exports: [BeneficiariesService],
 })

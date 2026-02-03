@@ -9,17 +9,7 @@ import { PaginationParams, PaginatedResponse } from '../../../shared/interfaces/
 import { CreateDonorDto } from '../dto/create-donor.dto';
 import { UpdateDonorDto } from '../dto/update-donor.dto';
 import { UserType } from '../../../config/constants';
-
-interface DonorStats {
-  totalDonors: number;
-  totalDonated: number;
-  recurringDonors: number;
-  byCountry: Array<{
-    country: string;
-    count: string;
-    total: string;
-  }>;
-}
+import { DonorStatsDto } from '../dto/donor-stats.dto';
 
 @Injectable()
 export class DonorsService extends BaseService<Donor> {
@@ -109,7 +99,7 @@ export class DonorsService extends BaseService<Donor> {
     return this.paginate(paginationParams, where.length > 0 ? where : undefined, ['user']);
   }
 
-  async getDonorStats(): Promise<DonorStats> {
+  async getDonorStats(): Promise<DonorStatsDto> {
     const totalDonors = await this.count();
     const totalDonatedResult = await this.donorsRepository
       .createQueryBuilder('donor')

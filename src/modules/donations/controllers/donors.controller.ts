@@ -23,6 +23,7 @@ import { CreateDonorDto } from '../dto/create-donor.dto';
 import { UpdateDonorDto } from '../dto/update-donor.dto';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
 import { UserType } from '../../../config/constants';
+import { DonorStatsDto } from '../dto/donor-stats.dto';
 
 @ApiTags('donors')
 @Controller('donors')
@@ -30,14 +31,21 @@ import { UserType } from '../../../config/constants';
 export class DonorsController {
   constructor(private readonly donorsService: DonorsService) {}
 
-  @Post('profile')
-  @Roles(UserType.DONOR)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create donor profile' })
-  @ApiResponse({ status: 201, description: 'Donor profile created' })
-  async createDonorProfile(@Req() req, @Body() createDonorDto: CreateDonorDto) {
-    return this.donorsService.createDonor(req.user.id, createDonorDto);
+@Post('profile')
+@Roles(UserType.DONOR)
+@ApiBearerAuth()
+@ApiOperation({ summary: 'Complete donor profile' })
+@ApiResponse({ status: 201, description: 'Donor profile completed' })
+async createDonorProfile(@Req() req, @Body() createDonorDto: CreateDonorDto) {
+  // Check if donor profile was created during registration
+  const existingDonor = await this.donorsService.findDonorByUserId(req.user.id);
+  
+  if (!existingDonor) {
+    throw new NotFoundException('No donor profile found. Please register first.');
   }
+  // Update with additional details
+  return this.donorsService.updateDonor(existingDonor.id, createDonorDto);
+}
 
   @Get('profile')
   @Roles(UserType.DONOR, UserType.ADMIN)
@@ -103,13 +111,17 @@ export class DonorsController {
   }
 
   @Get('stats')
-  @Roles(UserType.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get donor statistics (admin only)' })
-  async getDonorStats() {
-    return this.donorsService.getDonorStats();
-  }
-
+   @Roles(UserType.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get donor statistics (admin only)' })
+    @ApiResponse({ 
+    status: 200, 
+    description: 'Donor statistics returned',
+    type: DonorStatsDto 
+    })
+    async getDonorStats(): Promise<DonorStatsDto> {
+        return this.donorsService.getDonorStats();
+    }
   @Delete(':id')
   @Roles(UserType.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)

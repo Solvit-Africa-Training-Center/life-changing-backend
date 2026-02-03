@@ -9,6 +9,7 @@ import { PaginationParams, PaginatedResponse } from '../../../shared/interfaces/
 import { CreateStaffDto } from '../dto/create-staff.dto';
 import { UpdateStaffDto } from '../dto/update-staff.dto';
 import { UserType, StaffRole } from '../../../config/constants';
+import { StaffStatsDto } from '../dto/staff-stats.dto';
 
 @Injectable()
 export class StaffService extends BaseService<Staff> {
@@ -30,29 +31,31 @@ export class StaffService extends BaseService<Staff> {
 
     // Check if user already has a staff profile
     const existingStaff = await this.staffRepository.findOne({
-      where: { user: { id: userId } },
+        where: { user: { id: userId } },
     });
 
     if (existingStaff) {
-      throw new ConflictException('User already has a staff profile');
+        throw new ConflictException('User already has a staff profile');
     }
 
     // Update user type
     user.userType = UserType.ADMIN;
     await this.usersRepository.save(user);
 
-    // Parse hire date if provided
-    const staffData: any = { ...createStaffDto };
-    if (createStaffDto.hireDate) {
-      staffData.hireDate = new Date(createStaffDto.hireDate);
-    }
-
-    // Create staff profile
-    const staff = this.staffRepository.create({
+     const staffData = {
       user,
-      ...staffData,
-    });
+      fullName: createStaffDto.fullName,
+      role: createStaffDto.role,
+      department: createStaffDto.department,
+      permissions: createStaffDto.permissions,
+      employeeId: createStaffDto.employeeId,
+      hireDate: createStaffDto.hireDate ? new Date(createStaffDto.hireDate) : null,
+      contactInfo: createStaffDto.contactInfo,
+      isActive: true,
+    } as Staff;
 
+   // Create staff profile
+    const staff = this.staffRepository.create(staffData);
     return await this.staffRepository.save(staff);
   }
 
@@ -63,6 +66,7 @@ export class StaffService extends BaseService<Staff> {
     });
   }
 
+  
   async updateStaff(staffId: string, updateStaffDto: UpdateStaffDto): Promise<Staff> {
     const staff = await this.findOne(staffId, ['user']);
     
@@ -70,7 +74,17 @@ export class StaffService extends BaseService<Staff> {
       throw new NotFoundException('Staff not found');
     }
 
-    Object.assign(staff, updateStaffDto);
+    // Handle hireDate conversion if provided
+    if (updateStaffDto.hireDate !== undefined) {
+      const updatedData = {
+        ...updateStaffDto,
+        hireDate: updateStaffDto.hireDate ? new Date(updateStaffDto.hireDate) : null
+      };
+      Object.assign(staff, updatedData);
+    } else {
+      Object.assign(staff, updateStaffDto);
+    }
+
     return await this.staffRepository.save(staff);
   }
 
@@ -111,7 +125,7 @@ export class StaffService extends BaseService<Staff> {
     return this.paginate(paginationParams, where.length > 0 ? where : undefined, ['user']);
   }
 
-  async getStaffStats(): Promise<any> {
+  async getStaffStats(): Promise<StaffStatsDto> {
     const totalStaff = await this.count();
     const activeStaff = await this.count({ isActive: true });
     

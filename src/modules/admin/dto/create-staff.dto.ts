@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsBoolean, IsOptional, IsArray, IsObject, ValidateNested } from 'class-validator';
+import { IsString, IsEnum, IsBoolean, IsOptional, IsArray, IsObject, ValidateNested, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
 import { StaffRole } from '../../../config/constants';
 
@@ -43,7 +43,7 @@ export class CreateStaffDto {
 
   @ApiProperty({ example: '2024-01-01', required: false })
   @IsOptional()
-  @IsString()
+  @IsDateString()
   hireDate?: string;
 
   @ApiProperty({ type: ContactInfoDto, required: false })

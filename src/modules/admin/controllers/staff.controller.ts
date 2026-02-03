@@ -23,6 +23,7 @@ import { CreateStaffDto } from '../dto/create-staff.dto';
 import { UpdateStaffDto } from '../dto/update-staff.dto';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
 import { StaffRole, UserType } from '../../../config/constants';
+import { StaffStatsDto } from '../dto/staff-stats.dto';
 
 @ApiTags('staff')
 @Controller('staff')
@@ -30,16 +31,22 @@ import { StaffRole, UserType } from '../../../config/constants';
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
-  @Post()
-  @Roles(UserType.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create staff profile (admin only)' })
-  @ApiResponse({ status: 201, description: 'Staff profile created' })
-  async createStaff(@Body() createStaffDto: CreateStaffDto) {
-    // In real implementation, you'd get userId from request or create user first
-    // For now, we'll assume userId is provided in DTO or separate endpoint
-    throw new Error('Implement user creation first, then call createStaff with userId');
-  }
+  @Post('profile')  // Changed from @Post()
+    @Roles(UserType.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Complete staff profile' })
+    @ApiResponse({ status: 201, description: 'Staff profile completed' })
+    async createStaffProfile(@Req() req, @Body() createStaffDto: CreateStaffDto) {
+    // Get staff profile that was created during registration
+    const existingStaff = await this.staffService.findStaffByUserId(req.user.id);
+    
+    if (!existingStaff) {
+        throw new NotFoundException('No staff profile found. Please register first.');
+    }
+    
+    // Update with additional details
+    return this.staffService.updateStaff(existingStaff.id, createStaffDto);
+    }
 
   @Get('profile')
   @Roles(UserType.ADMIN)
@@ -117,7 +124,12 @@ export class StaffController {
   @Roles(UserType.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get staff statistics (admin only)' })
-  async getStaffStats() {
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Staff statistics returned',
+    type: StaffStatsDto 
+    })
+  async getStaffStats():Promise<StaffStatsDto> {
     return this.staffService.getStaffStats();
   }
 
