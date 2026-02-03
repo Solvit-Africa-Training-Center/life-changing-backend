@@ -10,6 +10,17 @@ import { CreateDonorDto } from '../dto/create-donor.dto';
 import { UpdateDonorDto } from '../dto/update-donor.dto';
 import { UserType } from '../../../config/constants';
 
+interface DonorStats {
+  totalDonors: number;
+  totalDonated: number;
+  recurringDonors: number;
+  byCountry: Array<{
+    country: string;
+    count: string;
+    total: string;
+  }>;
+}
+
 @Injectable()
 export class DonorsService extends BaseService<Donor> {
   constructor(
@@ -98,9 +109,9 @@ export class DonorsService extends BaseService<Donor> {
     return this.paginate(paginationParams, where.length > 0 ? where : undefined, ['user']);
   }
 
-  async getDonorStats(): Promise<any> {
+  async getDonorStats(): Promise<DonorStats> {
     const totalDonors = await this.count();
-    const totalDonated = await this.donorsRepository
+    const totalDonatedResult = await this.donorsRepository
       .createQueryBuilder('donor')
       .select('SUM(donor.totalDonated)', 'total')
       .getRawOne();
@@ -114,7 +125,7 @@ export class DonorsService extends BaseService<Donor> {
 
     return {
       totalDonors,
-      totalDonated: parseFloat(totalDonors.total) || 0,
+      totalDonated: parseFloat(totalDonatedResult?.total || '0') || 0,
       recurringDonors,
       byCountry,
     };
