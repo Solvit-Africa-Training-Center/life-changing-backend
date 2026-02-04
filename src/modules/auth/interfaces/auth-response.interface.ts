@@ -11,8 +11,10 @@ export interface AuthResponse {
 
 export interface LoginResponse extends AuthResponse {
   requiresVerification?: boolean;
+   requiresStaffProfile?: boolean; 
 }
 
 export interface RegisterResponse extends AuthResponse {
   verificationRequired: boolean;
+  requiresStaffProfile?: boolean; 
 }

@@ -1,12 +1,12 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Patch, 
-  Param, 
-  Delete, 
-  Body, 
-  Query, 
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Delete,
+  Body,
+  Query,
   UseGuards,
   Inject,
   forwardRef,
@@ -23,6 +23,12 @@ import { UsersService } from './users.service';
 import { DonorsService } from '../donations/services/donors.service';
 import { BeneficiariesService } from '../beneficiaries/services/beneficiaries.service';
 import { StaffService } from '../admin/services/staff.service';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { ActivateUserDto } from './dto/activate-user.dto';
+import type { PaginationParams } from 'src/shared/interfaces/pagination.interface';
+import { ReactivateUserDto } from './dto/reactivate-user.dto';
+import { DeactivateUserDto } from './dto/deactivate-user.dto';
 
 // Define interfaces for profile status
 interface ProfileStatus {
@@ -56,7 +62,7 @@ export class UsersController {
     private readonly beneficiariesService: BeneficiariesService,
     @Inject(forwardRef(() => StaffService))
     private readonly staffService: StaffService,
-  ) {}
+  ) { }
 
   @Post()
   @Roles(UserType.ADMIN)
@@ -80,11 +86,11 @@ export class UsersController {
     @Query('userType') userType?: UserType,
   ) {
     const paginationParams = { page, limit };
-    
+
     if (search) {
       return this.usersService.searchUsers(search, paginationParams);
     }
-    
+
     if (userType) {
       return this.usersService.getUsersByType(userType, paginationParams);
     }
@@ -110,31 +116,15 @@ export class UsersController {
     return this.usersService.updateUser(id, updateUserDto);
   }
 
-  @Delete(':id')
-  @Roles(UserType.ADMIN)
-  @ApiOperation({ summary: 'Delete user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User deleted' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async remove(@Param('id') id: string) {
-    return this.usersService.deactivateUser(id);
-  }
-
-  @Patch(':id/activate')
-  @Roles(UserType.ADMIN)
-  @ApiOperation({ summary: 'Activate user account (Admin only)' })
-  async activate(@Param('id') id: string) {
-    return this.usersService.activateUser(id);
-  }
-
   @Get('stats/count')
   @Roles(UserType.ADMIN)
   @ApiOperation({ summary: 'Get user statistics (Admin only)' })
   async getUserStats(@Query('userType') userType?: UserType) {
     const total = await this.usersService.countUsersByType();
-    const byType = userType 
+    const byType = userType
       ? { [userType]: await this.usersService.countUsersByType(userType) }
       : null;
-    
+
     return {
       total,
       byType,
@@ -144,8 +134,8 @@ export class UsersController {
   @Get(':id/profile-status')
   @Roles(UserType.ADMIN)
   @ApiOperation({ summary: 'Get user profile completion status (Admin only)' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Profile status returned',
     schema: {
       type: 'object',
@@ -156,7 +146,7 @@ export class UsersController {
         isComplete: { type: 'boolean', example: false },
         completionPercentage: { type: 'number', example: 75 },
         missingFields: { type: 'array', items: { type: 'string' } },
-        profileDetails: { 
+        profileDetails: {
           type: 'object',
           properties: {
             fullName: { type: 'string' },
@@ -170,7 +160,7 @@ export class UsersController {
   async getUserProfileStatus(@Param('id') id: string) {
     // Check if user exists
     const user = await this.usersService.findById(id);
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -264,7 +254,7 @@ export class UsersController {
   private getMissingDonorFields(donor: any): string[] {
     const missing: string[] = [];
     const requiredFields = ['country', 'preferredCurrency', 'communicationPreferences', 'receiptPreference'];
-    
+
     requiredFields.forEach(field => {
       if (!donor[field]) {
         missing.push(field);
@@ -277,7 +267,7 @@ export class UsersController {
   private getMissingBeneficiaryFields(beneficiary: any): string[] {
     const missing: string[] = [];
     const requiredFields = ['dateOfBirth', 'location', 'program', 'startCapital', 'businessType', 'trackingFrequency'];
-    
+
     requiredFields.forEach(field => {
       if (!beneficiary[field]) {
         missing.push(field);
@@ -300,7 +290,7 @@ export class UsersController {
   private getMissingStaffFields(staff: any): string[] {
     const missing: string[] = [];
     const requiredFields = ['department', 'permissions', 'employeeId'];
-    
+
     requiredFields.forEach(field => {
       if (!staff[field] || (Array.isArray(staff[field]) && staff[field].length === 0)) {
         missing.push(field);
@@ -326,7 +316,7 @@ export class UsersController {
     );
 
     const results: IncompleteProfileUser[] = [];
-    
+
     for (const user of users) {
       let isComplete = false;
       let profileType = '';
@@ -366,5 +356,72 @@ export class UsersController {
       totalIncomplete: results.length,
       users: results
     };
+  }
+
+  //USER ACTIVATION ENDPOINT (Admin only)
+  @Patch(':id/activate')
+  @Roles(UserType.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Activate/deactivate user account (Admin only)' })
+  async activateUser(
+    @Param('id') id: string,
+    @Body() activateDto: ActivateUserDto,
+    @CurrentUser() adminUser: AuthUser, // Use CurrentUser decorator
+  ) {
+    // Pass admin ID from current user
+    return this.usersService.activateUser(id, activateDto, adminUser.id);
+  }
+
+  //USER DESACTIVATION ENDPOINT (Admin only)
+  @Patch(':id/deactivate')
+  @Roles(UserType.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Deactivate user account (Admin only)' })
+  async deactivateUser(
+    @Param('id') id: string,
+    @Body() deactivateDto: DeactivateUserDto,
+    @CurrentUser() adminUser: AuthUser,
+  ) {
+    // Create activateDto with isActive: false
+    const activateDto: ActivateUserDto = {
+      isActive: false,
+      reason: deactivateDto.reason,
+    };
+
+    return this.usersService.activateUser(id, activateDto, adminUser.id);
+  }
+
+  @Patch(':id/reactivate')
+  @Roles(UserType.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reactivate user account (Admin only)' })
+  async reactivateUser(
+    @Param('id') id: string,
+    @Body() reactivateDto: ReactivateUserDto,
+    @CurrentUser() adminUser: AuthUser,
+  ) {
+    // Create activateDto with isActive: true
+    const activateDto: ActivateUserDto = {
+      isActive: true,
+      reason: reactivateDto.reason,
+    };
+
+    return this.usersService.activateUser(id, activateDto, adminUser.id);
+  }
+  // GET USER STATUS ENDPOINT
+  @Get(':id/status')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user account status' })
+  async getUserStatus(@Param('id') id: string) {
+    return this.usersService.getUserStatus(id);
+  }
+
+  // LIST PENDING ACTIVATION USERS (Admin only)
+  @Get('pending-activation')
+  @Roles(UserType.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get users pending activation (Admin only)' })
+  async getPendingActivationUsers(@Query() paginationParams: PaginationParams) {
+    return this.usersService.getPendingActivationUsers(paginationParams);
   }
 }

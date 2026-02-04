@@ -1,18 +1,30 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, Repository , In} from 'typeorm';
 import { User } from './entities/user.entity';
 import { BaseService } from '../../shared/services/base.service';
-import { PaginationParams } from '../../shared/interfaces/pagination.interface';
+import { PaginatedResponse, PaginationParams } from '../../shared/interfaces/pagination.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserType } from 'src/config/constants';
+import { ActivateUserDto } from './dto/activate-user.dto';
+import { Donor } from '../donations/entities/donor.entity';
+import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
+import { ActivityLogService } from '../admin/activity-log.service';
+import { NotificationService } from '../notifications/services/notifications.service';
 
 @Injectable()
 export class UsersService extends BaseService<User> {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Donor)
+    private donorsRepository: Repository<Donor>,
+    @InjectRepository(Beneficiary)
+    private beneficiariesRepository: Repository<Beneficiary>,
+    private activityLogService: ActivityLogService,
+    private notificationService: NotificationService, 
+
   ) {
     super(usersRepository);
   }
@@ -48,28 +60,6 @@ export class UsersService extends BaseService<User> {
     }
 
     Object.assign(user, updateUserDto);
-    return this.usersRepository.save(user);
-  }
-
-  async deactivateUser(id: string): Promise<User> {
-    const user = await this.findById(id);
-    
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    user.isActive = false;
-    return this.usersRepository.save(user);
-  }
-
-  async activateUser(id: string): Promise<User> {
-    const user = await this.findById(id);
-    
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    user.isActive = true;
     return this.usersRepository.save(user);
   }
 
@@ -139,5 +129,146 @@ export class UsersService extends BaseService<User> {
     }
     
     return this.paginate(paginationParams, where.length > 0 ? where : undefined);
+  }
+   async activateUser(userId: string, activateDto: ActivateUserDto, adminId?: string): Promise<User> {
+    const user = await this.usersRepository.findOne({ 
+      where: { id: userId },
+      relations: ['donorProfile', 'beneficiaryProfile']
+    });
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.isActive = activateDto.isActive;
+    const updatedUser = await this.usersRepository.save(user);
+
+    // Log the activation/deactivation
+    await this.activityLogService.logActivity(
+      adminId || 'system', // Use adminId if provided
+      activateDto.isActive ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
+      'users',
+      userId,
+      null,
+      { 
+        reason: activateDto.reason,
+        userType: user.userType,
+        actionBy: adminId ? 'admin' : 'system'
+      },
+      activateDto.isActive 
+        ? `User activated by admin. Reason: ${activateDto.reason || 'No reason provided'}`
+        : `User deactivated by admin. Reason: ${activateDto.reason || 'No reason provided'}`
+    );
+
+    // Send notification to user about activation status
+    if (activateDto.isActive) {
+      await this.notificationService.sendAccountActivatedNotification(
+        userId,
+        user.language
+      );
+    } else {
+      await this.notificationService.sendAccountDeactivatedNotification(
+        userId,
+        user.language,
+        activateDto.reason
+      );
+    }
+
+    return updatedUser;
+  }
+
+  async getPendingActivationUsers(paginationParams: PaginationParams): Promise<PaginatedResponse<User>> {
+    const where: FindOptionsWhere<User> = { 
+      isActive: false,
+      isVerified: true, // Only show verified users pending activation
+      userType: In([UserType.DONOR, UserType.BENEFICIARY]) // Exclude admin
+    };
+    
+    return this.paginate(paginationParams, where, [
+      'donorProfile',
+      'beneficiaryProfile'
+    ]);
+  }
+
+  async getUserStatus(userId: string): Promise<any> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Determine account status
+    let status = 'ACTIVE';
+    if (!user.isVerified) status = 'UNVERIFIED';
+    else if (!user.isActive) status = 'PENDING_ACTIVATION';
+
+    // Get profile completion status
+    let profileCompletion = {};
+    if (user.userType === UserType.DONOR) {
+      const donor = await this.donorsRepository.findOne({ where: { user: { id: userId } } });
+      profileCompletion = this.calculateDonorProfileCompletion(donor);
+    } else if (user.userType === UserType.BENEFICIARY) {
+      const beneficiary = await this.beneficiariesRepository.findOne({ 
+        where: { user: { id: userId } } 
+      });
+      profileCompletion = this.calculateBeneficiaryProfileCompletion(beneficiary);
+    }
+
+    return {
+      userId: user.id,
+      email: user.email,
+      phone: user.phone,
+      userType: user.userType,
+      isVerified: user.isVerified,
+      isActive: user.isActive,
+      verifiedAt: user.verifiedAt,
+      lastLoginAt: user.lastLoginAt,
+      accountStatus: status,
+      profileCompletion,
+      createdAt: user.createdAt,
+    };
+  }
+
+  // Add these helper methods
+  private calculateDonorProfileCompletion(donor: any): any {
+    if (!donor) return { percentage: 0, missingFields: ['profile'] };
+    
+    const fields = [
+      'fullName',
+      'country',
+      'preferredCurrency',
+      'receiptPreference',
+    ];
+    
+    const completed = fields.filter(field => donor[field]);
+    const percentage = (completed.length / fields.length) * 100;
+    
+    return {
+      percentage: Math.round(percentage),
+      completedFields: completed,
+      missingFields: fields.filter(field => !donor[field]),
+    };
+  }
+
+  private calculateBeneficiaryProfileCompletion(beneficiary: any): any {
+    if (!beneficiary) return { percentage: 0, missingFields: ['profile'] };
+    
+    const fields = [
+      'fullName',
+      'dateOfBirth',
+      'location',
+      'businessType',
+      'startCapital',
+      'trackingFrequency',
+    ];
+    
+    const completed = fields.filter(field => beneficiary[field]);
+    const percentage = (completed.length / fields.length) * 100;
+    
+    return {
+      percentage: Math.round(percentage),
+      completedFields: completed,
+      missingFields: fields.filter(field => !beneficiary[field]),
+    };
   }
 }

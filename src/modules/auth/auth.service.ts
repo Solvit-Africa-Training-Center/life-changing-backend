@@ -5,7 +5,8 @@ import {
   ConflictException, 
   BadRequestException, 
   NotFoundException,
-  InternalServerErrorException 
+  InternalServerErrorException, 
+  ForbiddenException
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -72,13 +73,28 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Check if account is verified (except admin)
+    if (user.userType !== UserType.ADMIN && !user.isVerified) {
+      throw new UnauthorizedException('Please verify your account first');
+    }
+
+    // Check if account is activated
     if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
+      throw new UnauthorizedException('Account is pending admin activation');
     }
 
     // Update last login
     user.lastLoginAt = new Date();
     await this.usersRepository.save(user);
+
+    // Check if admin has completed staff profile
+    let requiresStaffProfile = false;
+    if (user.userType === UserType.ADMIN) {
+      const staffProfile = await this.staffRepository.findOne({
+        where: { user: { id: user.id } }
+      });
+      requiresStaffProfile = !staffProfile; // true if no staff profile
+    }
 
     // Log login activity
     await this.activityLogService.logActivity(
@@ -106,7 +122,8 @@ export class AuthService {
     return {
       user: userWithoutPassword as any,
       tokens,
-      requiresVerification: !user.isVerified,
+      requiresVerification: user.userType !== UserType.ADMIN && !user.isVerified,
+      requiresStaffProfile,
     };
   }
 
@@ -115,6 +132,14 @@ export class AuthService {
 
     if (!phone) {
       throw new BadRequestException('Phone number is required');
+    }
+
+    // Default to BENEFICIARY if no role specified
+    const finalUserType = userType || UserType.BENEFICIARY;
+
+    // Prevent admin registration through public endpoint
+    if (finalUserType === UserType.ADMIN) {
+      throw new ForbiddenException('Admin registration is not allowed');
     }
 
     // Check if user already exists

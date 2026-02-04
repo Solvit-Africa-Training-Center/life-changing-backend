@@ -18,7 +18,7 @@ export class NotificationService {
     @InjectRepository(Notif)
     private notificationsRepository: Repository<Notif>,
     @InjectQueue('notifications') private notificationsQueue: Queue,
-  ) {}
+  ) { }
 
   async createNotification(
     userId: string,
@@ -41,12 +41,12 @@ export class NotificationService {
     });
 
     const savedNotification = await this.notificationsRepository.save(notification);
-    
+
     // Queue processing for in-app notifications
     if (channel === NotificationChannel.IN_APP) {
       await this.queueNotification(savedNotification);
     }
-    
+
     return savedNotification;
   }
 
@@ -59,7 +59,7 @@ export class NotificationService {
     };
 
     let jobName = 'generic-notification';
-    
+
     // Map notification types to specific job handlers
     switch (notification.type) {
       case NotificationType.WELCOME:
@@ -175,6 +175,58 @@ export class NotificationService {
       message,
       NotificationChannel.IN_APP,
       { language },
+    );
+  }
+
+  // In src/modules/notifications/notifications.service.ts
+  // Add these methods to your NotificationService class:
+
+  async sendAccountActivatedNotification(
+    userId: string,
+    language: Language = Language.EN
+  ): Promise<Notif> {
+    const title = {
+      en: 'Account Activated',
+      rw: 'Konte Yemeretswe',
+    };
+
+    const message = {
+      en: 'Your account has been activated by the admin. You can now access all features.',
+      rw: 'Konte yawe yemeretswe n\'umuyobozi. Ushobora noneho gukoresha ibikubiyemo byose.',
+    };
+
+    return await this.createNotification(
+      userId,
+      NotificationType.SYSTEM_ALERT,
+      title,
+      message,
+      NotificationChannel.IN_APP,
+      { language, type: 'account_activated' },
+    );
+  }
+
+  async sendAccountDeactivatedNotification(
+    userId: string,
+    language: Language = Language.EN,
+    reason?: string
+  ): Promise<Notif> {
+    const title = {
+      en: 'Account Deactivated',
+      rw: 'Konte Yahagaritswe',
+    };
+
+    const message = {
+      en: `Your account has been deactivated by the admin. ${reason ? `Reason: ${reason}` : ''}`,
+      rw: `Konte yawe yahagaritswe n'umuyobozi. ${reason ? `Impamvu: ${reason}` : ''}`,
+    };
+
+    return await this.createNotification(
+      userId,
+      NotificationType.SYSTEM_ALERT,
+      title,
+      message,
+      NotificationChannel.IN_APP,
+      { language, type: 'account_deactivated', reason },
     );
   }
 
