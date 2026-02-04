@@ -18,6 +18,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ContentModule } from './modules/content/content.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     // Feature modules
     AuthModule,
     UsersModule,
+    SharedModule,
     BeneficiariesModule,
     DonationsModule,
     ProgramsModule,

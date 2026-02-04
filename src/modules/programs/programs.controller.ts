@@ -1,6 +1,18 @@
-// eslint-disable-next-line no-redeclare
-import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  // eslint-disable-next-line no-redeclare
+  Body,
+  Query,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+
 import { ProgramsService } from './programs.service';
 import { CreateProgramDTO } from './dto/create-program.dto';
 import { UpdateProgramDTO } from './dto/update-program.dto';
@@ -13,7 +25,7 @@ export class ProgramsController {
 
   // ---------- PUBLIC ----------
   @Get()
-  getPrograms(@Query() query: FilterProgramsDTO) {
+  async getPrograms(@Query() query: FilterProgramsDTO) {
     return this.programsService.findPublicPrograms(
       {
         page: query.page,
@@ -26,13 +38,13 @@ export class ProgramsController {
   }
 
   @Get(':id')
-  getProgram(@Param('id') id: string) {
+  async getProgram(@Param('id') id: string) {
     return this.programsService.findProgramById(id);
   }
 
   // ---------- ADMIN ----------
   @Get('admin/list')
-  getAdminPrograms(@Query() query: FilterProgramsDTO) {
+  async getAdminPrograms(@Query() query: FilterProgramsDTO) {
     return this.programsService.findAdminPrograms(
       {
         page: query.page,
@@ -44,18 +56,37 @@ export class ProgramsController {
     );
   }
 
+  // ⭐ CREATE PROGRAM (WITH CLOUDINARY)
   @Post()
-  createProgram(@Body() data: CreateProgramDTO) {
-    return this.programsService.createProgram(data);
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'coverImage', maxCount: 1 },
+      { name: 'logo', maxCount: 1 },
+    ]),
+  )
+  async createProgram(
+    @Body() data: CreateProgramDTO,
+    @UploadedFiles()
+    files: {
+      // eslint-disable-next-line no-undef
+      coverImage?: Express.Multer.File[];
+      // eslint-disable-next-line no-undef
+      logo?: Express.Multer.File[];
+    },
+  ) {
+    return this.programsService.createProgram(data, files?.coverImage?.[0], files?.logo?.[0]);
   }
 
+  // ⭐ UPDATE PROGRAM
   @Patch(':id')
-  updateProgram(@Param('id') id: string, @Body() data: UpdateProgramDTO) {
-    return this.programsService.updateProgram(id, data);
+  async updateProgram(@Param('id') id: string, @Body() data: UpdateProgramDTO) {
+    return this.programsService.updateProgram(id, data as any);
   }
 
+  // ⭐ DEACTIVATE PROGRAM
   @Patch(':id/deactivate')
-  deactivateProgram(@Param('id') id: string) {
+  async deactivateProgram(@Param('id') id: string) {
     return this.programsService.deactivateProgram(id);
   }
 }

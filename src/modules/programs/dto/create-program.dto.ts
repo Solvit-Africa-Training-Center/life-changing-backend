@@ -1,18 +1,37 @@
-import { IsString, IsOptional, IsEnum, IsNumber, IsDate, IsObject, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsDateString,
+  IsObject,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
 import { ProgramCategory, ProgramStatus } from '../../../config/constants';
+import { CreateProjectDTO } from './create-project.dto';
+
+// ⭐ Reusable multilingual DTO
+export class LocalizedTextDTO {
+  @IsString()
+  en: string;
+
+  @IsString()
+  rw: string;
+}
 
 export class CreateProgramDTO {
-  @IsObject()
-  name: {
-    en: string;
-    rw: string;
-  };
+  // ⭐ Multilingual name validation
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
+  name: LocalizedTextDTO;
 
-  @IsObject()
-  description: {
-    en: string;
-    rw: string;
-  };
+  // ⭐ Multilingual description validation
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
+  description: LocalizedTextDTO;
 
   @IsEnum(ProgramCategory)
   category: ProgramCategory;
@@ -23,12 +42,13 @@ export class CreateProgramDTO {
   @IsObject()
   kpiTargets: Record<string, any>;
 
-  @IsDate()
-  startDate: Date;
+  // ⭐ JSON friendly date validation
+  @IsDateString()
+  startDate: string;
 
   @IsOptional()
-  @IsDate()
-  endDate?: Date;
+  @IsDateString()
+  endDate?: string;
 
   @IsNumber()
   budget: number;
@@ -60,4 +80,11 @@ export class CreateProgramDTO {
   @IsOptional()
   @IsEnum(ProgramStatus)
   status?: ProgramStatus;
+
+  // ⭐ PROGRAM → PROJECT LINKING
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateProjectDTO)
+  projects?: CreateProjectDTO[];
 }
