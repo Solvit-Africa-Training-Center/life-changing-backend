@@ -30,7 +30,7 @@ import { Language, StaffRole, UserType, NotificationType, NotificationChannel } 
 import { Donor } from '../donations/entities/donor.entity';
 import { Staff } from '../admin/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
-import { NotificationService } from '../notifications/notifications.service';
+import { NotificationService } from '../notifications/services/notifications.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { ActivityLogService } from '../admin/activity-log.service';
 

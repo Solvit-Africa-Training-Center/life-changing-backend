@@ -20,6 +20,7 @@ export enum Language {
   RW = 'rw',
 }
 
+// #4c9789
 // Beneficiary Status
 export enum BeneficiaryStatus {
   ACTIVE = 'active',
@@ -194,7 +195,7 @@ export enum AuthorRole {
 }
 
 // Constants
-export const API_PREFIX = '/api/v1';
+export const API_PREFIX = '/api';
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 export const CACHE_TTL = 3600;

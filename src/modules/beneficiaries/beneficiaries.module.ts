@@ -22,7 +22,7 @@ import { EmergencyContact } from './entities/emergency-contact.entity';
 import { User } from '../users/entities/user.entity';
 import { Program } from '../programs/entities/program.entity';
 import { Staff } from '../admin/entities/staff.entity';
-import { UssdController } from '../ussd/ussd.controller';
+// import { UssdController } from '../ussd/ussd.controller';
 
 @Module({
   imports: [
@@ -46,7 +46,7 @@ import { UssdController } from '../ussd/ussd.controller';
     TrackingController,
     GoalsController,
     EmergencyContactsController,
-    UssdController,
+    // UssdController,
   ],
   providers: [
     BeneficiariesService,

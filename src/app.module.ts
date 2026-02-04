@@ -14,12 +14,13 @@ import { UsersModule } from './modules/users/users.module';
 import { BeneficiariesModule } from './modules/beneficiaries/beneficiaries.module';
 import { DonationsModule } from './modules/donations/donations.module';
 import { ProgramsModule } from './modules/programs/programs.module';
-import { UssdModule } from './modules/ussd/ussd.module';
+// import { UssdModule } from './modules/ussd/ussd.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ContentModule } from './modules/content/content.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
@@ -92,10 +93,11 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     // Feature modules
     AuthModule,
     UsersModule,
+    SharedModule,
     BeneficiariesModule,
     DonationsModule,
     ProgramsModule,
-    UssdModule,
+    // UssdModule,
     AnalyticsModule,
     AdminModule,
     NotificationsModule,

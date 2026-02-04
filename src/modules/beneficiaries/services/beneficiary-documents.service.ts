@@ -49,34 +49,20 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
       throw new NotFoundException('User not found');
     }
 
-    let fileUrl: string;
-    let fileName: string;
-    let fileSize: number;
-    let mimeType: string;
-    let publicId: string;
+    // Create folder name: beneficiary_{beneficiaryId}_documents
+    const folder = `beneficiary_${beneficiaryId}_documents`;
+
+    let uploadResult: any;
 
     if (file) {
       // Handle file upload via multer
-      const uploadResult = await this.cloudinaryService.uploadFile(
-        file, 
-        `beneficiary_${beneficiaryId}_documents`
-      );
-      fileUrl = uploadResult.url;
-      publicId = uploadResult.publicId;
-      fileName = file.originalname;
-      fileSize = file.size;
-      mimeType = file.mimetype;
+      uploadResult = await this.cloudinaryService.uploadFile(file, folder);
     } else if (uploadDocumentDto.fileBase64) {
       // Handle base64 file upload
-      const uploadResult = await this.cloudinaryService.uploadBase64File(
+      uploadResult = await this.cloudinaryService.uploadBase64File(
         uploadDocumentDto.fileBase64,
-        `beneficiary_${beneficiaryId}_documents`
+        folder
       );
-      fileUrl = uploadResult.url;
-      publicId = uploadResult.publicId;
-      fileName = `${uploadDocumentDto.documentType}_${Date.now()}`;
-      fileSize = Buffer.from(uploadDocumentDto.fileBase64, 'base64').length;
-      mimeType = 'application/octet-stream'; // Default mime type
     } else {
       throw new BadRequestException('Either file or fileBase64 must be provided');
     }
@@ -84,17 +70,66 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
     const document = this.documentsRepository.create({
       beneficiary,
       documentType: uploadDocumentDto.documentType,
-      fileUrl,
-      fileName,
-      fileSize,
-      mimeType,
-      publicId,
+      fileUrl: uploadResult.url,
+      fileName: file ? file.originalname : `${uploadDocumentDto.documentType}_${Date.now()}`,
+      fileSize: uploadResult.bytes,
+      mimeType: file ? file.mimetype : this.getMimeTypeFromFormat(uploadResult.format),
+      publicId: uploadResult.publicId,
       uploadedBy,
       uploadedByType,
       verified: false,
     });
 
     return await this.documentsRepository.save(document);
+  }
+
+  async uploadMultipleDocuments(
+    beneficiaryId: string,
+    files: Express.Multer.File[],
+    documentType: DocumentType,
+    uploadedById: string,
+    uploadedByType: UserType
+  ): Promise<BeneficiaryDocument[]> {
+    const beneficiary = await this.beneficiariesRepository.findOne({
+      where: { id: beneficiaryId },
+    });
+
+    if (!beneficiary) {
+      throw new NotFoundException('Beneficiary not found');
+    }
+
+    const uploadedBy = await this.usersRepository.findOne({
+      where: { id: uploadedById },
+    });
+
+    if (!uploadedBy) {
+      throw new NotFoundException('User not found');
+    }
+
+    const folder = `beneficiary_${beneficiaryId}_documents`;
+    const documents: BeneficiaryDocument[] = [];
+
+    for (const file of files) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file, folder);
+
+      const document = this.documentsRepository.create({
+        beneficiary,
+        documentType,
+        fileUrl: uploadResult.url,
+        fileName: file.originalname,
+        fileSize: uploadResult.bytes,
+        mimeType: file.mimetype,
+        publicId: uploadResult.publicId,
+        uploadedBy,
+        uploadedByType,
+        verified: false,
+      });
+
+      const savedDocument = await this.documentsRepository.save(document);
+      documents.push(savedDocument);
+    }
+
+    return documents;
   }
 
   async getBeneficiaryDocuments(
@@ -157,6 +192,23 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
     await this.documentsRepository.delete(documentId);
   }
 
+  async deleteMultipleDocuments(documentIds: string[]): Promise<void> {
+    const documents = await this.documentsRepository.findByIds(documentIds);
+    
+    if (documents.length === 0) {
+      throw new NotFoundException('No documents found');
+    }
+
+    // Get all public IDs for deletion
+    const publicIds = documents.map(doc => doc.publicId);
+
+    // Delete from Cloudinary in batch
+    await this.cloudinaryService.deleteFiles(publicIds);
+
+    // Delete from database
+    await this.documentsRepository.delete(documentIds);
+  }
+
   async getDocumentStats(beneficiaryId: string) {
     const stats = await this.documentsRepository
       .createQueryBuilder('document')
@@ -166,5 +218,25 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
       .getRawMany();
 
     return stats;
+  }
+
+  /**
+   * Helper method to get MIME type from Cloudinary format
+   */
+  private getMimeTypeFromFormat(format: string): string {
+    const mimeTypeMap: Record<string, string> = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+
+    return mimeTypeMap[format.toLowerCase()] || 'application/octet-stream';
   }
 }

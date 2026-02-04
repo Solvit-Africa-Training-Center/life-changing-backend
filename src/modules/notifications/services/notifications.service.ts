@@ -6,15 +6,15 @@ import { Repository } from 'typeorm';
 import type { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 
-import { AfricasTalkingService } from './africas-talking.service';
-import { Notif } from './entities/notification.entity';
-import { NotificationType, NotificationStatus, NotificationChannel, Language } from '../../config/constants';
+import { SMSService } from './sms.service';
+import { Notif } from '../entities/notification.entity';
+import { NotificationType, NotificationStatus, NotificationChannel, Language } from '../../../config/constants';
 
 @Injectable()
 export class NotificationService {
   constructor(
     private configService: ConfigService,
-    private africasTalkingService: AfricasTalkingService,
+    private africasTalkingService: SMSService,
     @InjectRepository(Notif)
     private notificationsRepository: Repository<Notif>,
     @InjectQueue('notifications') private notificationsQueue: Queue,

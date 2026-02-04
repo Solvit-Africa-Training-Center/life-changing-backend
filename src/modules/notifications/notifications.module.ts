@@ -3,11 +3,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 
-import { AfricasTalkingService } from './africas-talking.service';
+import { SMSService } from './services/sms.service';
 import { NotificationsController } from './notifications.controller';
-import { NotificationService } from './notifications.service';
+import { NotificationService } from './services/notifications.service';
 import { NotificationsProcessor } from './processors/notifications.processor';
 import { Notif } from './entities/notification.entity';
+import { EmailService } from './services/email.service';
 
 @Module({
   imports: [
@@ -19,9 +20,10 @@ import { Notif } from './entities/notification.entity';
   controllers: [NotificationsController],
   providers: [
     NotificationService,
-    AfricasTalkingService,
+    SMSService,
+    EmailService,
     NotificationsProcessor,
   ],
-  exports: [NotificationService, AfricasTalkingService],
+  exports: [NotificationService, SMSService,EmailService],
 })
 export class NotificationsModule {}

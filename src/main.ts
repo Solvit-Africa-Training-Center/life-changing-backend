@@ -74,10 +74,11 @@ async function bootstrap() {
       .addTag('auth', 'Authentication endpoints')
       .addTag('users', 'User management')
       .addTag('beneficiaries', 'Beneficiary management')
+      .addTag('staff', 'Staff dashboard')
+      .addTag('donors', 'Donor dashboard')
       .addTag('donations', 'Donation processing')
       .addTag('programs', 'Program management')
       .addTag('ussd', 'USSD integration')
-      .addTag('admin', 'Admin dashboard')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
