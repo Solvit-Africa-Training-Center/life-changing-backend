@@ -1,5 +1,5 @@
 // src/modules/auth/auth.module.ts
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -24,9 +24,9 @@ import { ActivityLogService } from '../admin/activity-log.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Donor, Staff, Beneficiary,ActivityLog]),
-    UsersModule,
+    forwardRef(() => UsersModule),
     PassportModule,
-    NotificationsModule,
+    NotificationsModule, 
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -48,6 +48,6 @@ import { ActivityLogService } from '../admin/activity-log.service';
     TokenBlacklistService,
     ActivityLogService
   ],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, JwtModule, TokenBlacklistService],
 })
 export class AuthModule {}

@@ -8,27 +8,23 @@ import { BeneficiariesModule } from '../beneficiaries/beneficiaries.module';
 import { AdminModule } from '../admin/admin.module';
 import { Donor } from '../donations/entities/donor.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
-import { ActivityLog } from '../admin/entities/activity-log.entity';
-import { ActivityLogService } from '../admin/activity-log.service';
-import { NotificationService } from '../notifications/services/notifications.service';
+import { AuthModule } from '../auth/auth.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
    imports: [TypeOrmModule.forFeature([
       User,  
       Donor,
-      Beneficiary,
-      ActivityLog,
+      Beneficiary
     ]),
     forwardRef(() => DonationsModule),
     forwardRef(() => BeneficiariesModule),
     forwardRef(() => AdminModule),
+    forwardRef(() => AuthModule),
+    NotificationsModule, 
   ],
   controllers: [UsersController],
   providers: [UsersService],
-  exports: [
-    UsersService,
-    ActivityLogService,
-    NotificationService, 
-  ],
+  exports: [UsersService],
 })
 export class UsersModule {}

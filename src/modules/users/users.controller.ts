@@ -64,14 +64,6 @@ export class UsersController {
     private readonly staffService: StaffService,
   ) { }
 
-  @Post()
-  @Roles(UserType.ADMIN)
-  @ApiOperation({ summary: 'Create a new user (Admin only)' })
-  @ApiResponse({ status: 201, description: 'User created successfully' })
-  async create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.createUser(createUserDto);
-  }
-
   @Get()
   @Roles(UserType.ADMIN)
   @ApiOperation({ summary: 'Get all users (Admin only)' })

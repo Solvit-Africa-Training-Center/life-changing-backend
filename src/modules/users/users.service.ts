@@ -12,6 +12,7 @@ import { Donor } from '../donations/entities/donor.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
 import { ActivityLogService } from '../admin/activity-log.service';
 import { NotificationService } from '../notifications/services/notifications.service';
+import { TokenBlacklistService } from '../auth/token-blacklist.service';
 
 @Injectable()
 export class UsersService extends BaseService<User> {
@@ -24,6 +25,7 @@ export class UsersService extends BaseService<User> {
     private beneficiariesRepository: Repository<Beneficiary>,
     private activityLogService: ActivityLogService,
     private notificationService: NotificationService, 
+    private tokenBlacklistService : TokenBlacklistService
 
   ) {
     super(usersRepository);
@@ -45,11 +47,6 @@ export class UsersService extends BaseService<User> {
 
   async findById(id: string): Promise<User | null> {
     return this.findOne(id);
-  }
-
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const user = this.usersRepository.create(createUserDto);
-    return this.usersRepository.save(user);
   }
 
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
@@ -142,6 +139,16 @@ export class UsersService extends BaseService<User> {
 
     user.isActive = activateDto.isActive;
     const updatedUser = await this.usersRepository.save(user);
+
+     // ✅ INVALIDATE ALL USER TOKENS WHEN DEACTIVATING
+    if (!activateDto.isActive) {
+      try {
+        // You need to inject TokenBlacklistService
+        await this.tokenBlacklistService.blacklistAllUserTokens(userId);
+      } catch (error) {
+        console.error('Failed to blacklist user tokens:', error);
+      }
+    }
 
     // Log the activation/deactivation
     await this.activityLogService.logActivity(

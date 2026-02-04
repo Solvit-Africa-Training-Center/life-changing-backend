@@ -185,7 +185,7 @@ export class BeneficiariesController {
         }
 
         const missingFields = this.getMissingBeneficiaryFields(beneficiary);
-        const completionPercentage = this.calculateCompletionPercentage(beneficiary, missingFields);
+        const completionPercentage = this.calculateCompletionPercentage(missingFields);
 
         return {
             hasProfile: true,
@@ -228,7 +228,7 @@ export class BeneficiariesController {
         return missing;
     }
 
-    private calculateCompletionPercentage(beneficiary: Beneficiary, missingFields: string[]): number {
+    private calculateCompletionPercentage(missingFields: string[]): number {
         const totalFields = 10; // Adjust based on your required fields
         const completedFields = totalFields - missingFields.length;
         return Math.round((completedFields / totalFields) * 100);
