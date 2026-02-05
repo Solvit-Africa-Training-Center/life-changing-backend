@@ -12,7 +12,8 @@ import {
     Req,
     HttpCode,
     HttpStatus,
-    NotFoundException
+    NotFoundException,
+    ConflictException
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -41,11 +42,12 @@ export class BeneficiariesController {
         // Check if beneficiary profile was created during registration
         const existingBeneficiary = await this.beneficiariesService.findBeneficiaryByUserId(req.user.id);
 
-        if (!existingBeneficiary) {
-            throw new NotFoundException('No beneficiary profile found. Please register first.');
+        if (existingBeneficiary) {
+            throw new ConflictException('Beneficiary profile already exists. Use PUT /profile to update.');
         }
-        // Update with additional details
-        return this.beneficiariesService.updateBeneficiary(existingBeneficiary.id, createBeneficiaryDto);
+
+        // CREATE the profile (requires all mandatory fields from DTO)
+        return this.beneficiariesService.createBeneficiary(req.user.id, createBeneficiaryDto);
     }
 
     @Get('profile')

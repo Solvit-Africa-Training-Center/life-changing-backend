@@ -1,11 +1,11 @@
 // src/modules/auth/auth.service.ts
-import { 
-  Injectable, 
-  UnauthorizedException, 
-  ConflictException, 
-  BadRequestException, 
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
   NotFoundException,
-  InternalServerErrorException, 
+  InternalServerErrorException,
   ForbiddenException
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -53,11 +53,11 @@ export class AuthService {
     private notificationService: NotificationService,
     private tokenBlacklistService: TokenBlacklistService,
     private activityLogService: ActivityLogService,
-  ) {}
+  ) { }
 
   async login(loginDto: LoginDto): Promise<LoginResponse> {
     const { email, phone, password, deviceId } = loginDto;
-    
+
     if (!email && !phone) {
       throw new BadRequestException('Email or phone is required');
     }
@@ -151,29 +151,22 @@ export class AuthService {
 
     // Format phone number
     const formattedPhone = this.helpers.formatPhoneNumber(phone);
-    
+
     // Create user
     const userData: Partial<User> = {
       email: email || null,
       phone: formattedPhone,
+      fullName,
       password,
-      userType,
+      userType: finalUserType,
       language: this.parseLanguage(language),
       isVerified: false,
+      isActive: false,
       verificationToken: this.helpers.generateRandomToken(),
     };
 
     const user = this.usersRepository.create(userData as User);
     await this.usersRepository.save(user);
-
-    // Create profile based on user type
-    try {
-      await this.createUserProfile(user, fullName, userType);
-    } catch (error) {
-      // Rollback if profile creation fails
-      await this.usersRepository.delete(user.id);
-      throw new InternalServerErrorException('Failed to create user profile');
-    }
 
     // Generate tokens
     const tokens = await this.generateTokens(user);
@@ -219,7 +212,7 @@ export class AuthService {
   async refreshTokens(refreshTokenDto: RefreshTokenDto): Promise<Tokens> {
     try {
       const { refreshToken } = refreshTokenDto;
-      
+
       // Check if token is blacklisted
       const isBlacklisted = await this.tokenBlacklistService.isTokenBlacklisted(refreshToken);
       if (isBlacklisted) {
@@ -232,7 +225,7 @@ export class AuthService {
       });
 
       const user = await this.usersService.findById(payload.sub);
-      
+
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
@@ -298,16 +291,17 @@ export class AuthService {
   }
 
   async validateUser(identifier: string, password: string): Promise<User | null> {
+
     const user = await this.usersService.findByEmailOrPhone(identifier);
-    
+
     if (!user) {
       return null;
     }
-
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    
+
     if (!isPasswordValid) {
-      return null;
+      const userCompareResult = await user.comparePassword(password);
+      return userCompareResult ? user : null;
     }
 
     return user;
@@ -346,39 +340,6 @@ export class AuthService {
     };
   }
 
-  private async createUserProfile(user: User, fullName: string, userType: UserType): Promise<void> {
-    switch (userType) {
-      case UserType.DONOR:
-        const donor = this.donorsRepository.create({
-          user,
-          fullName,
-        });
-        await this.donorsRepository.save(donor);
-        break;
-
-      case UserType.BENEFICIARY:
-        const beneficiary = this.beneficiariesRepository.create({
-          user,
-          fullName,
-          enrollmentDate: new Date(),
-        });
-        await this.beneficiariesRepository.save(beneficiary);
-        break;
-
-      case UserType.ADMIN:
-        const staff = this.staffRepository.create({
-          user,
-          fullName,
-          role: StaffRole.ADMIN,
-          permissions: ['*'],
-        });
-        await this.staffRepository.save(staff);
-        break;
-      default:
-        throw new BadRequestException(`Unsupported user type: ${userType}`);
-    }
-  }
-
   private async sendVerification(user: User): Promise<void> {
     try {
       if (user.email) {
@@ -393,7 +354,7 @@ export class AuthService {
 
   private parseLanguage(lang?: string): Language {
     if (!lang) return Language.EN;
-    
+
     const normalized = lang.toLowerCase();
     if (normalized === 'rw' || normalized === 'kinyarwanda') {
       return Language.RW;
@@ -403,7 +364,7 @@ export class AuthService {
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
     const { email, phone } = forgotPasswordDto;
-    
+
     if (!email && !phone) {
       throw new BadRequestException('Email or phone is required');
     }
@@ -416,7 +377,7 @@ export class AuthService {
 
     const identifier = getIdentifier();
     const user = await this.usersService.findByEmailOrPhone(identifier);
-    
+
     if (!user) {
       return { message: 'If an account exists, a reset link will be sent' };
     }
@@ -424,7 +385,7 @@ export class AuthService {
     const resetToken = this.helpers.generateRandomToken();
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = new Date(Date.now() + 3600000);
-    
+
     await this.usersRepository.save(user);
 
     // Send in-app notification
@@ -471,7 +432,7 @@ export class AuthService {
     user.password = newPassword;
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
-    
+
     await this.usersRepository.save(user);
 
     // Invalidate all existing tokens
@@ -505,7 +466,7 @@ export class AuthService {
     user.isVerified = true;
     user.verificationToken = null;
     user.verifiedAt = new Date();
-    
+
     await this.usersRepository.save(user);
 
     // Log account verification

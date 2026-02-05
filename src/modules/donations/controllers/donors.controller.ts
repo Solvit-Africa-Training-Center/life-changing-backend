@@ -12,7 +12,8 @@ import {
     Req,
     HttpCode,
     HttpStatus,
-    NotFoundException
+    NotFoundException,
+    ConflictException
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -41,11 +42,11 @@ export class DonorsController {
         // Check if donor profile was created during registration
         const existingDonor = await this.donorsService.findDonorByUserId(req.user.id);
 
-        if (!existingDonor) {
-            throw new NotFoundException('No donor profile found. Please register first.');
+        if (existingDonor) {
+            throw new ConflictException('Donor profile already exists. Use PUT /profile to update.');
         }
-        // Update with additional details
-        return this.donorsService.updateDonor(existingDonor.id, createDonorDto);
+
+        return this.donorsService.createDonor(req.user.id, createDonorDto);
     }
 
     @Get('profile')

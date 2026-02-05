@@ -1,8 +1,8 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   UpdateDateColumn,
   BeforeInsert,
   BeforeUpdate,
@@ -17,15 +17,13 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-   @Column({ 
-    type: 'varchar', 
-    unique: true, 
+  @Column({
+    type: 'varchar',
+    unique: true,
     nullable: true,
-    length: 255 
+    length: 255
   })
   email: string | null;
-  // @Column({ unique: true, nullable: true })
-  // email: string | null; 
 
   @Column({ name: 'full_name' })
   fullName: string;
@@ -54,19 +52,19 @@ export class User {
   @Column({ default: false })
   isVerified: boolean;
 
-  @Column({  type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   verificationToken: string | null; // Allow null
 
   @Column({ type: 'timestamp', nullable: true })
   verifiedAt: Date | null; // Allow null
 
-  @Column({ type: 'varchar',  nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   resetPasswordToken: string | null; // Allow null
 
   @Column({ type: 'timestamp', nullable: true })
   resetPasswordExpires: Date | null; // Allow null
 
-  @Column({  type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   offlineSyncToken: string | null; // Allow null
 
   @Column({ default: true })
@@ -89,9 +87,17 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
+    // Only hash if password exists and is NOT already a bcrypt hash
     if (this.password) {
-      const saltRounds = 10;
-      this.password = await bcrypt.hash(this.password, saltRounds);
+      // Check if already a bcrypt hash (starts with $2a$, $2b$, or $2y$)
+      const isAlreadyHashed = this.password.startsWith('$2a$') ||
+        this.password.startsWith('$2b$') ||
+        this.password.startsWith('$2y$');
+
+      if (!isAlreadyHashed) {
+        const saltRounds = 10;
+        this.password = await bcrypt.hash(this.password, saltRounds);
+      }
     }
   }
 

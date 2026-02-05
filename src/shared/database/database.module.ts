@@ -16,7 +16,7 @@
 import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseConfig } from '../../config/database.config';
-import { User } from 'src/modules/users/entities/user.entity';
+import { User } from '../../modules/users/entities/user.entity';
 import { AdminSeeder } from '../seeders/admin.seeder';
 
 @Module({

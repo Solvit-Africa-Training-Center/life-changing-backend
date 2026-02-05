@@ -1,4 +1,4 @@
-// Updated NotificationsProcessor using EmailService
+// src/modules/notifications/notifications.processor.ts
 import { Processor, Process, OnQueueActive, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
 import type { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
@@ -39,6 +39,69 @@ export class NotificationsProcessor {
   @OnQueueFailed()
   onFailed(job: Job, error: Error) {
     this.logger.error(`Failed job ${job.id} of type ${job.name}: ${error.message}`);
+  }
+
+  // Add this missing handler
+  @Process('welcome-notification')
+  async handleWelcomeNotification(job: Job) {
+    const { notificationId, userId, type, data } = job.data;
+    
+    try {
+      // Mark the notification as sent
+      await this.notificationsRepository.update(notificationId, {
+        status: NotificationStatus.SENT,
+        sentAt: new Date(),
+      });
+      
+      this.logger.log(`✅ Welcome notification processed for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`❌ Error processing welcome notification for user ${userId}:`, error.message);
+      // Don't throw in development
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
+    }
+  }
+
+  // Add this handler too for password reset notifications
+  @Process('password-reset-notification')
+  async handlePasswordResetNotification(job: Job) {
+    const { notificationId, userId, type, data } = job.data;
+    
+    try {
+      // Mark the notification as sent
+      await this.notificationsRepository.update(notificationId, {
+        status: NotificationStatus.SENT,
+        sentAt: new Date(),
+      });
+      
+      this.logger.log(`✅ Password reset notification processed for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`❌ Error processing password reset notification for user ${userId}:`, error.message);
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
+    }
+  }
+
+  // Add this for generic notifications
+  @Process('generic-notification')
+  async handleGenericNotification(job: Job) {
+    const { notificationId, userId, type, data } = job.data;
+    
+    try {
+      await this.notificationsRepository.update(notificationId, {
+        status: NotificationStatus.SENT,
+        sentAt: new Date(),
+      });
+      
+      this.logger.log(`✅ Generic notification processed for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`❌ Error processing generic notification for user ${userId}:`, error.message);
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
+    }
   }
 
   @Process('email-verification')
@@ -82,5 +145,63 @@ export class NotificationsProcessor {
     }
   }
 
-  // ... update other methods similarly
+  @Process('password-reset-email')
+  async handlePasswordResetEmail(job: Job) {
+    const { email, token } = job.data;
+    
+    try {
+      const success = await this.emailService.sendPasswordResetEmail(email, token);
+      if (success) {
+        this.logger.log(`✅ Password reset email sent to ${email}`);
+      } else {
+        this.logger.warn(`⚠️ Password reset email to ${email} may not have been sent`);
+      }
+    } catch (error) {
+      this.logger.error(`❌ Error sending password reset email to ${email}:`, error.message);
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
+    }
+  }
+
+  @Process('password-reset-sms')
+  async handlePasswordResetSMS(job: Job) {
+    const { phone, token } = job.data;
+    
+    const message = `LCEO Password Reset: Use this code to reset your password: ${token}`;
+    
+    try {
+      const success = await this.smsService.sendSMS(phone, message);
+      if (success) {
+        this.logger.log(`✅ Password reset SMS sent to ${phone}`);
+      } else {
+        this.logger.warn(`⚠️ Password reset SMS to ${phone} may not have been sent`);
+      }
+    } catch (error) {
+      this.logger.error(`❌ Error sending password reset SMS to ${phone}:`, error.message);
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
+    }
+  }
+
+  // You might also want to add handlers for other notification types
+  @Process('system-alert')
+  async handleSystemAlert(job: Job) {
+    const { notificationId, userId, data } = job.data;
+    
+    try {
+      await this.notificationsRepository.update(notificationId, {
+        status: NotificationStatus.SENT,
+        sentAt: new Date(),
+      });
+      
+      this.logger.log(`✅ System alert processed for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`❌ Error processing system alert for user ${userId}:`, error.message);
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
+    }
+  }
 }

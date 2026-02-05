@@ -30,10 +30,15 @@ export class RegisterDto {
   @IsString()
   fullName: string;
 
-  @ApiProperty({ enum: UserType, example: UserType.DONOR })
-  @IsNotEmpty()
+   @ApiProperty({ 
+    enum: UserType, 
+    example: UserType.BENEFICIARY,
+    required: false,
+    default: UserType.BENEFICIARY
+  })
+  @IsOptional()
   @IsEnum(UserType)
-  userType: UserType;
+  userType?: UserType;
 
   @ApiProperty({ enum: Language, example: Language.EN, required: false })
   @IsOptional()

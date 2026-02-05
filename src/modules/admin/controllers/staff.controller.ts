@@ -12,7 +12,8 @@ import {
     Req,
     HttpCode,
     HttpStatus,
-    NotFoundException
+    NotFoundException,
+    ConflictException
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -41,12 +42,11 @@ export class StaffController {
         // Get staff profile that was created during registration
         const existingStaff = await this.staffService.findStaffByUserId(req.user.id);
 
-        if (!existingStaff) {
-            throw new NotFoundException('No staff profile found. Please register first.');
+        if (existingStaff) {
+            throw new ConflictException('Staff profile already exists. Use PUT /profile to update.');
         }
 
-        // Update with additional details
-        return this.staffService.updateStaff(existingStaff.id, createStaffDto);
+        return this.staffService.createStaff(req.user.id, createStaffDto);
     }
 
     @Get('profile')
