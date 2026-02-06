@@ -5,15 +5,6 @@ export enum UserType {
   BENEFICIARY = 'beneficiary',
 }
 
-// Staff Roles (from your staff table)
-export enum StaffRole {
-  SUPER_ADMIN = 'super_admin',
-  ADMIN = 'admin',
-  PROGRAM_MANAGER = 'program_manager',
-  DATA_ENTRY = 'data_entry',
-  VIEWER = 'viewer',
-}
-
 // Languages
 export enum Language {
   EN = 'en',

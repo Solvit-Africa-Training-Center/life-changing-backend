@@ -12,7 +12,6 @@ import {
   Language, 
   AttendanceStatus,
   BeneficiaryStatus,
-  StaffRole,
   Currency,
   PaymentMethod,
   PaymentStatus,
@@ -103,7 +102,7 @@ export class UssdSession {
     
     // Staff Data
     staffData?: {
-      role?: StaffRole;
+      role?: UserType;
       assignedTasks?: Array<{
         taskId: string;
         taskName: string;

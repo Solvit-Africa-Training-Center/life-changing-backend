@@ -63,6 +63,84 @@ export class UsersController {
     private readonly staffService: StaffService,
   ) { }
 
+
+    // Optional: Add endpoint to get all users with incomplete profiles
+  @Get('incomplete-profiles')
+  @Roles(UserType.ADMIN)
+  @ApiOperation({ summary: 'Get all users with incomplete profiles (Admin only)' })
+  @ApiQuery({ name: 'userType', required: false, enum: UserType })
+  async getIncompleteProfiles(@Query('userType') userType?: UserType) {
+    const users = await this.usersService.findAll(
+      userType ? { userType } : undefined
+    );
+
+    const results: IncompleteProfileUser[] = [];
+
+    for (const user of users) {
+      let isComplete = false;
+      let profileType = '';
+
+      switch (user.userType) {
+        case UserType.DONOR:
+          const donor = await this.donorsService.findDonorByUserId(user.id);
+          profileType = 'donor';
+          isComplete = donor ? this.getMissingDonorFields(donor).length === 0 : false;
+          break;
+        case UserType.BENEFICIARY:
+          const beneficiary = await this.beneficiariesService.findBeneficiaryByUserId(user.id);
+          profileType = 'beneficiary';
+          isComplete = beneficiary ? this.getMissingBeneficiaryFields(beneficiary).length === 0 : false;
+          break;
+        case UserType.ADMIN:
+          const staff = await this.staffService.findStaffByUserId(user.id);
+          profileType = 'staff';
+          isComplete = staff ? this.getMissingStaffFields(staff).length === 0 : false;
+          break;
+      }
+
+      if (!isComplete) {
+        results.push({
+          userId: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          userType: user.userType,
+          profileType,
+          registeredAt: user.createdAt,
+        });
+      }
+    }
+
+    return {
+      totalIncomplete: results.length,
+      users: results
+    };
+  }
+
+  // LIST PENDING ACTIVATION USERS (Admin only)
+  @Get('pending-activation')
+  @Roles(UserType.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get users pending activation (Admin only)' })
+  async getPendingActivationUsers(@Query() paginationParams: PaginationParams) {
+    return this.usersService.getPendingActivationUsers(paginationParams);
+  }
+
+  @Get('stats/count')
+  @Roles(UserType.ADMIN)
+  @ApiOperation({ summary: 'Get user statistics (Admin only)' })
+  async getUserStats(@Query('userType') userType?: UserType) {
+    const total = await this.usersService.countUsersByType();
+    const byType = userType
+      ? { [userType]: await this.usersService.countUsersByType(userType) }
+      : null;
+
+    return {
+      total,
+      byType,
+    };
+  }
+
   @Get()
   @Roles(UserType.ADMIN)
   @ApiOperation({ summary: 'Get all users (Admin only)' })
@@ -107,21 +185,6 @@ export class UsersController {
     return this.usersService.updateUser(id, updateUserDto);
   }
 
-  @Get('stats/count')
-  @Roles(UserType.ADMIN)
-  @ApiOperation({ summary: 'Get user statistics (Admin only)' })
-  async getUserStats(@Query('userType') userType?: UserType) {
-    const total = await this.usersService.countUsersByType();
-    const byType = userType
-      ? { [userType]: await this.usersService.countUsersByType(userType) }
-      : null;
-
-    return {
-      total,
-      byType,
-    };
-  }
-
   @Get(':id/profile-status')
   @Roles(UserType.ADMIN)
   @ApiOperation({ summary: 'Get user profile completion status (Admin only)' })
@@ -147,6 +210,7 @@ export class UsersController {
       }
     }
   })
+
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserProfileStatus(@Param('id') id: string) {
     // Check if user exists
@@ -219,12 +283,9 @@ export class UsersController {
             completionPercentage: this.calculateCompletionPercentage(4, missingFields.length), // 4 required fields
             missingFields,
             profileDetails: {
-              fullName: staff.fullName,
-              role: staff.role,
-              department: staff.department,
-              employeeId: staff.employeeId,
-              isActive: staff.isActive,
-              hireDate: staff.hireDate,
+                position: staff.position,
+                department: staff.department,
+                contactInfo: staff.contactInfo,
             }
           };
         }
@@ -296,59 +357,6 @@ export class UsersController {
     return Math.round((completedFields / totalFields) * 100);
   }
 
-  // Optional: Add endpoint to get all users with incomplete profiles
-  @Get('incomplete-profiles')
-  @Roles(UserType.ADMIN)
-  @ApiOperation({ summary: 'Get all users with incomplete profiles (Admin only)' })
-  @ApiQuery({ name: 'userType', required: false, enum: UserType })
-  async getIncompleteProfiles(@Query('userType') userType?: UserType) {
-    const users = await this.usersService.findAll(
-      userType ? { userType } : undefined
-    );
-
-    const results: IncompleteProfileUser[] = [];
-
-    for (const user of users) {
-      let isComplete = false;
-      let profileType = '';
-
-      switch (user.userType) {
-        case UserType.DONOR:
-          const donor = await this.donorsService.findDonorByUserId(user.id);
-          profileType = 'donor';
-          isComplete = donor ? this.getMissingDonorFields(donor).length === 0 : false;
-          break;
-        case UserType.BENEFICIARY:
-          const beneficiary = await this.beneficiariesService.findBeneficiaryByUserId(user.id);
-          profileType = 'beneficiary';
-          isComplete = beneficiary ? this.getMissingBeneficiaryFields(beneficiary).length === 0 : false;
-          break;
-        case UserType.ADMIN:
-          const staff = await this.staffService.findStaffByUserId(user.id);
-          profileType = 'staff';
-          isComplete = staff ? this.getMissingStaffFields(staff).length === 0 : false;
-          break;
-      }
-
-      if (!isComplete) {
-        results.push({
-          userId: user.id,
-          fullName: user.fullName,
-          email: user.email,
-          phone: user.phone,
-          userType: user.userType,
-          profileType,
-          registeredAt: user.createdAt,
-        });
-      }
-    }
-
-    return {
-      totalIncomplete: results.length,
-      users: results
-    };
-  }
-
   //USER ACTIVATION ENDPOINT (Admin only)
   @Patch(':id/activate')
   @Roles(UserType.ADMIN)
@@ -407,12 +415,4 @@ export class UsersController {
     return this.usersService.getUserStatus(id);
   }
 
-  // LIST PENDING ACTIVATION USERS (Admin only)
-  @Get('pending-activation')
-  @Roles(UserType.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get users pending activation (Admin only)' })
-  async getPendingActivationUsers(@Query() paginationParams: PaginationParams) {
-    return this.usersService.getPendingActivationUsers(paginationParams);
-  }
 }

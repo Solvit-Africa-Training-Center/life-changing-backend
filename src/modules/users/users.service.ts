@@ -129,7 +129,6 @@ export class UsersService extends BaseService<User> {
    async activateUser(userId: string, activateDto: ActivateUserDto, adminId?: string): Promise<User> {
     const user = await this.usersRepository.findOne({ 
       where: { id: userId },
-      relations: ['donorProfile', 'beneficiaryProfile']
     });
     
     if (!user) {
@@ -139,7 +138,7 @@ export class UsersService extends BaseService<User> {
     user.isActive = activateDto.isActive;
     const updatedUser = await this.usersRepository.save(user);
 
-     // ✅ INVALIDATE ALL USER TOKENS WHEN DEACTIVATING
+    // ✅ INVALIDATE ALL USER TOKENS WHEN DEACTIVATING
     if (!activateDto.isActive) {
       try {
         // You need to inject TokenBlacklistService
@@ -190,10 +189,7 @@ export class UsersService extends BaseService<User> {
       userType: In([UserType.DONOR, UserType.BENEFICIARY]) // Exclude admin
     };
     
-    return this.paginate(paginationParams, where, [
-      'donorProfile',
-      'beneficiaryProfile'
-    ]);
+    return this.paginate(paginationParams, where);
   }
 
   async getUserStatus(userId: string): Promise<any> {

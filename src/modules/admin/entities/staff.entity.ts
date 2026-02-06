@@ -12,7 +12,6 @@ import { User } from '../../users/entities/user.entity';
 import { WeeklyTracking } from '../../beneficiaries/entities/weekly-tracking.entity';
 import { BeneficiaryDocument } from '../../beneficiaries/entities/beneficiary-document.entity';
 import { ImpactMetric } from '../../programs/entities/impact-metric.entity';
-import { StaffRole } from '../../../config/constants';
 
 @Entity('staff')
 export class Staff {
@@ -23,27 +22,11 @@ export class Staff {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ name: 'full_name' })
-  fullName: string;
+  @Column({ name: 'position', nullable: true })
+  position: string; // e.g., "Project Manager", "Field Officer"
 
-  @Column({
-    type: 'enum',
-    enum: StaffRole,
-    default: StaffRole.VIEWER,
-  })
-  role: StaffRole;
-
-  @Column({ nullable: true })
-  department: string;
-
-  @Column({ type: 'jsonb' })
-  permissions: string[];
-
-  @Column({ name: 'employee_id', nullable: true })
-  employeeId: string;
-
-  @Column({ name: 'hire_date', type: 'date', nullable: true })
-  hireDate: Date;
+  @Column({ name: 'department', nullable: true })
+  department: string; // e.g., "Operations", "Finance"
 
   @Column({ name: 'contact_info', type: 'jsonb', nullable: true })
   contactInfo: {

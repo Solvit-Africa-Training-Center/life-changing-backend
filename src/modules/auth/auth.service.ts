@@ -27,7 +27,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyAccountDto } from './dto/verify-account.dto';
 import { Tokens, JwtPayload } from './interfaces/tokens.interface';
 import { LoginResponse, RegisterResponse } from './interfaces/auth-response.interface';
-import { Language, StaffRole, UserType, NotificationType, NotificationChannel } from '../../config/constants';
+import { Language, UserType, NotificationType, NotificationChannel } from '../../config/constants';
 import { Donor } from '../donations/entities/donor.entity';
 import { Staff } from '../admin/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';

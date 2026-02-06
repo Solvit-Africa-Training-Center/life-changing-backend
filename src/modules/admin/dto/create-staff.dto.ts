@@ -1,56 +1,38 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsBoolean, IsOptional, IsArray, IsObject, ValidateNested, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsObject } from 'class-validator';
 import { Type } from 'class-transformer';
-import { StaffRole } from '../../../config/constants';
 
 export class ContactInfoDto {
-  @ApiProperty({ example: 'Jane Doe' })
+  @ApiProperty({ example: 'Jane Doe', required: false })
+  @IsOptional()
   @IsString()
-  emergencyContact: string;
+  emergencyContact?: string;
 
-  @ApiProperty({ example: '+250788123456' })
+  @ApiProperty({ example: '+250788123456', required: false })
+  @IsOptional()
   @IsString()
-  emergencyPhone: string;
+  emergencyPhone?: string;
 
-  @ApiProperty({ example: 'Kigali, Rwanda' })
+  @ApiProperty({ example: 'Kigali, Rwanda', required: false })
+  @IsOptional()
   @IsString()
-  address: string;
+  address?: string;
 }
 
 export class CreateStaffDto {
-  @ApiProperty({ example: 'Jane Smith' })
+  @ApiProperty({ example: 'Project Manager', required: false })
+  @IsOptional()
   @IsString()
-  fullName: string;
+  position?: string;
 
-  @ApiProperty({ enum: StaffRole, example: StaffRole.ADMIN })
-  @IsEnum(StaffRole)
-  role: StaffRole;
-
-  @ApiProperty({ example: 'Program Management', required: false })
+  @ApiProperty({ example: 'Operations', required: false })
   @IsOptional()
   @IsString()
   department?: string;
 
-  @ApiProperty({ example: ['*'], type: [String] })
-  @IsArray()
-  @IsString({ each: true })
-  permissions: string[];
-
-  @ApiProperty({ example: 'EMP001', required: false })
-  @IsOptional()
-  @IsString()
-  employeeId?: string;
-
-  @ApiProperty({ example: '2024-01-01', required: false })
-  @IsOptional()
-  @IsDateString()
-  hireDate?: string;
-
   @ApiProperty({ type: ContactInfoDto, required: false })
   @IsOptional()
   @IsObject()
-  @ValidateNested()
   @Type(() => ContactInfoDto)
   contactInfo?: ContactInfoDto;
 }
-

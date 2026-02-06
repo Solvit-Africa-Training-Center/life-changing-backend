@@ -8,8 +8,9 @@ import { BaseService } from '../../../shared/services/base.service';
 import { PaginationParams, PaginatedResponse } from '../../../shared/interfaces/pagination.interface';
 import { CreateStaffDto } from '../dto/create-staff.dto';
 import { UpdateStaffDto } from '../dto/update-staff.dto';
-import { UserType, StaffRole } from '../../../config/constants';
+import { UserType } from '../../../config/constants';
 import { StaffStatsDto } from '../dto/staff-stats.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class StaffService extends BaseService<Staff> {
@@ -31,123 +32,112 @@ export class StaffService extends BaseService<Staff> {
 
     // Check if user already has a staff profile
     const existingStaff = await this.staffRepository.findOne({
-        where: { user: { id: userId } },
+      where: { user: { id: userId } },
     });
 
     if (existingStaff) {
-        throw new ConflictException('User already has a staff profile');
+      throw new ConflictException('User already has a staff profile');
     }
 
     // Update user type
     user.userType = UserType.ADMIN;
     await this.usersRepository.save(user);
 
-     const staffData = {
+    const staffData = {
       user,
-      fullName: createStaffDto.fullName,
-      role: createStaffDto.role,
+      position: createStaffDto.position,
       department: createStaffDto.department,
-      permissions: createStaffDto.permissions,
-      employeeId: createStaffDto.employeeId,
-      hireDate: createStaffDto.hireDate ? new Date(createStaffDto.hireDate) : null,
       contactInfo: createStaffDto.contactInfo,
-      isActive: true,
     } as Staff;
 
-   // Create staff profile
+    // Create staff profile
     const staff = this.staffRepository.create(staffData);
-    return await this.staffRepository.save(staff);
+    const savedStaff = await this.staffRepository.save(staff);
+
+    // Convert to trigger @Exclude()
+    return plainToInstance(Staff, savedStaff);
   }
 
   async findStaffByUserId(userId: string): Promise<Staff | null> {
-    return this.staffRepository.findOne({
+    const staff = this.staffRepository.findOne({
       where: { user: { id: userId } },
       relations: ['user'],
     });
+
+    if (!staff) return null;
+
+    // Convert to plain object and then back to instance to trigger @Exclude()
+    return plainToInstance(Staff, staff);
   }
 
-  
+
   async updateStaff(staffId: string, updateStaffDto: UpdateStaffDto): Promise<Staff> {
     const staff = await this.findOne(staffId, ['user']);
-    
+
     if (!staff) {
       throw new NotFoundException('Staff not found');
     }
 
-    // Handle hireDate conversion if provided
-    if (updateStaffDto.hireDate !== undefined) {
-      const updatedData = {
-        ...updateStaffDto,
-        hireDate: updateStaffDto.hireDate ? new Date(updateStaffDto.hireDate) : null
-      };
-      Object.assign(staff, updatedData);
-    } else {
-      Object.assign(staff, updateStaffDto);
-    }
+    Object.assign(staff, updateStaffDto);
+    const updatedStaff = await this.staffRepository.save(staff);
 
-    return await this.staffRepository.save(staff);
+    return plainToInstance(Staff, updatedStaff);
   }
 
-  async deactivateStaff(staffId: string): Promise<Staff> {
-    const staff = await this.findOne(staffId);
-    
-    if (!staff) {
-      throw new NotFoundException('Staff not found');
-    }
 
-    staff.isActive = false;
-    return await this.staffRepository.save(staff);
-  }
+  async getStaffByDepartment(department: string, paginationParams: PaginationParams): Promise<PaginatedResponse<Staff>> {
+    const where: FindOptionsWhere<Staff> = { department };
+    const result = await this.paginate(paginationParams, where, ['user']);
 
-  async activateStaff(staffId: string): Promise<Staff> {
-    const staff = await this.findOne(staffId);
-    
-    if (!staff) {
-      throw new NotFoundException('Staff not found');
-    }
+    // Transform each staff item
+    const transformedData = result.data.map(staff => plainToInstance(Staff, staff));
 
-    staff.isActive = true;
-    return await this.staffRepository.save(staff);
-  }
-
-  async getStaffByRole(role: StaffRole, paginationParams: PaginationParams): Promise<PaginatedResponse<Staff>> {
-    const where: FindOptionsWhere<Staff> = { role, isActive: true };
-    return this.paginate(paginationParams, where, ['user']);
+    return {
+      ...result,
+      data: transformedData
+    };
   }
 
   async searchStaff(query: string, paginationParams: PaginationParams): Promise<PaginatedResponse<Staff>> {
     const where: FindOptionsWhere<Staff>[] = [
-      { fullName: query },
+      { position: query },
       { department: query },
-      { employeeId: query },
     ];
 
-    return this.paginate(paginationParams, where.length > 0 ? where : undefined, ['user']);
+    const result = await this.paginate(paginationParams, where.length > 0 ? where : undefined, ['user']);
+
+    const transformedData = result.data.map(staff => plainToInstance(Staff, staff));
+
+    return {
+      ...result,
+      data: transformedData
+    };
   }
 
-  async getStaffStats(): Promise<StaffStatsDto> {
+  async getStaffStats(): Promise<{ totalStaff: number, byDepartment: any[] }> {
     const totalStaff = await this.count();
-    const activeStaff = await this.count({ isActive: true });
-    
-    const byRole = await this.staffRepository
-      .createQueryBuilder('staff')
-      .select('staff.role, COUNT(*) as count')
-      .where('staff.is_active = :isActive', { isActive: true })
-      .groupBy('staff.role')
-      .getRawMany();
 
     const byDepartment = await this.staffRepository
       .createQueryBuilder('staff')
       .select('staff.department, COUNT(*) as count')
-      .where('staff.is_active = :isActive AND staff.department IS NOT NULL', { isActive: true })
+      .where('staff.department IS NOT NULL')
       .groupBy('staff.department')
       .getRawMany();
 
     return {
       totalStaff,
-      activeStaff,
-      byRole,
       byDepartment,
     };
+  }
+
+  async findOne(id: string, relations: string[] = []): Promise<Staff | null> {
+    const entity = await this.staffRepository.findOne({
+      where: { id },
+      relations
+    });
+
+    if (!entity) return null;
+
+    return plainToInstance(Staff, entity);
   }
 }
