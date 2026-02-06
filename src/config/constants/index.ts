@@ -17,6 +17,8 @@ export enum BeneficiaryStatus {
   ACTIVE = 'active',
   GRADUATED = 'graduated',
   INACTIVE = 'inactive',
+  WAITING = 'waiting',
+  PENDING = 'pending',
 }
 
 // Tracking Frequency

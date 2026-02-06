@@ -46,6 +46,7 @@ interface IncompleteProfileUser {
   userType: UserType;
   profileType: string;
   registeredAt: Date;
+  missingFields: string[];
 }
 
 @ApiTags('users')
@@ -64,59 +65,74 @@ export class UsersController {
   ) { }
 
 
-    // Optional: Add endpoint to get all users with incomplete profiles
-  @Get('incomplete-profiles')
-  @Roles(UserType.ADMIN)
-  @ApiOperation({ summary: 'Get all users with incomplete profiles (Admin only)' })
-  @ApiQuery({ name: 'userType', required: false, enum: UserType })
-  async getIncompleteProfiles(@Query('userType') userType?: UserType) {
-    const users = await this.usersService.findAll(
-      userType ? { userType } : undefined
-    );
+  // Optional: Add endpoint to get all users with incomplete profiles
+ @Get('incomplete-profiles')
+@Roles(UserType.ADMIN)
+@ApiOperation({ summary: 'Get all users with incomplete profiles (Admin only)' })
+@ApiQuery({ name: 'userType', required: false, enum: UserType })
+async getIncompleteProfiles(@Query('userType') userType?: UserType) {
+  const users = await this.usersService.findAll(
+    userType ? { userType } : undefined
+  );
 
-    const results: IncompleteProfileUser[] = [];
+  const results: IncompleteProfileUser[] = [];
 
-    for (const user of users) {
-      let isComplete = false;
-      let profileType = '';
+  for (const user of users) {
+    let isComplete = false;
+    let profileType = '';
+    let missingFields: string[] = [];
 
-      switch (user.userType) {
-        case UserType.DONOR:
-          const donor = await this.donorsService.findDonorByUserId(user.id);
-          profileType = 'donor';
-          isComplete = donor ? this.getMissingDonorFields(donor).length === 0 : false;
-          break;
-        case UserType.BENEFICIARY:
-          const beneficiary = await this.beneficiariesService.findBeneficiaryByUserId(user.id);
-          profileType = 'beneficiary';
-          isComplete = beneficiary ? this.getMissingBeneficiaryFields(beneficiary).length === 0 : false;
-          break;
-        case UserType.ADMIN:
-          const staff = await this.staffService.findStaffByUserId(user.id);
-          profileType = 'staff';
-          isComplete = staff ? this.getMissingStaffFields(staff).length === 0 : false;
-          break;
-      }
-
-      if (!isComplete) {
-        results.push({
-          userId: user.id,
-          fullName: user.fullName,
-          email: user.email,
-          phone: user.phone,
-          userType: user.userType,
-          profileType,
-          registeredAt: user.createdAt,
-        });
-      }
+    switch (user.userType) {
+      case UserType.DONOR:
+        const donor = await this.donorsService.findDonorByUserId(user.id);
+        profileType = 'donor';
+        if (donor) {
+          missingFields = this.getMissingDonorFields(donor);
+          isComplete = missingFields.length === 0;
+        } else {
+          missingFields = ['profile_not_created'];
+        }
+        break;
+      case UserType.BENEFICIARY:
+        const beneficiary = await this.beneficiariesService.findBeneficiaryByUserId(user.id);
+        profileType = 'beneficiary';
+        if (beneficiary) {
+          missingFields = this.getMissingBeneficiaryFields(beneficiary);
+          isComplete = missingFields.length === 0;
+        } else {
+          missingFields = ['profile_not_created'];
+        }
+        break;
+      case UserType.ADMIN:
+        const staff = await this.staffService.findStaffByUserId(user.id);
+        profileType = 'staff';
+        if (staff) {
+          missingFields = this.getMissingStaffFields(staff);
+          isComplete = missingFields.length === 0;
+        } else {
+          missingFields = ['profile_not_created'];
+        }
+        break;
     }
 
-    return {
-      totalIncomplete: results.length,
-      users: results
-    };
+    if (!isComplete) {
+      results.push({
+        userId: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        userType: user.userType,
+        profileType,
+        registeredAt: user.createdAt,
+        missingFields: missingFields // Add this to see what's missing
+      });
+    }
   }
-
+  return {
+    totalIncomplete: results.length,
+    users: results
+  };
+}
   // LIST PENDING ACTIVATION USERS (Admin only)
   @Get('pending-activation')
   @Roles(UserType.ADMIN)
@@ -188,29 +204,7 @@ export class UsersController {
   @Get(':id/profile-status')
   @Roles(UserType.ADMIN)
   @ApiOperation({ summary: 'Get user profile completion status (Admin only)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Profile status returned',
-    schema: {
-      type: 'object',
-      properties: {
-        userId: { type: 'string', example: 'uuid' },
-        userType: { type: 'string', example: 'donor' },
-        hasProfile: { type: 'boolean', example: true },
-        isComplete: { type: 'boolean', example: false },
-        completionPercentage: { type: 'number', example: 75 },
-        missingFields: { type: 'array', items: { type: 'string' } },
-        profileDetails: {
-          type: 'object',
-          properties: {
-            fullName: { type: 'string' },
-            // Add other profile fields as needed
-          }
-        }
-      }
-    }
-  })
-
+  @ApiResponse({ status: 200, description: 'Profile status returned' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserProfileStatus(@Param('id') id: string) {
     // Check if user exists
@@ -234,10 +228,11 @@ export class UsersController {
         const donor = await this.donorsService.findDonorByUserId(id);
         if (donor) {
           const missingFields = this.getMissingDonorFields(donor);
+          // Donor has 4 required fields: country, preferredCurrency, communicationPreferences, receiptPreference
           profileStatus = {
             hasProfile: true,
             isComplete: missingFields.length === 0,
-            completionPercentage: this.calculateCompletionPercentage(4, missingFields.length), // 5 required fields
+            completionPercentage: this.calculateCompletionPercentage(4, missingFields.length),
             missingFields,
             profileDetails: {
               country: donor.country,
@@ -254,13 +249,13 @@ export class UsersController {
         const beneficiary = await this.beneficiariesService.findBeneficiaryByUserId(id);
         if (beneficiary) {
           const missingFields = this.getMissingBeneficiaryFields(beneficiary);
+          // Beneficiary has 7 required fields: dateOfBirth, location, program, enrollmentDate, startCapital, businessType, trackingFrequency
           profileStatus = {
             hasProfile: true,
             isComplete: missingFields.length === 0,
-            completionPercentage: this.calculateCompletionPercentage(8, missingFields.length), // 8 required fields
+            completionPercentage: this.calculateCompletionPercentage(7, missingFields.length),
             missingFields,
             profileDetails: {
-              fullName: beneficiary.fullName,
               program: beneficiary.program?.name || 'No program assigned',
               status: beneficiary.status,
               currentCapital: beneficiary.currentCapital,
@@ -276,15 +271,16 @@ export class UsersController {
         const staff = await this.staffService.findStaffByUserId(id);
         if (staff) {
           const missingFields = this.getMissingStaffFields(staff);
+          // Staff has 3 required fields: position, department, contactInfo
           profileStatus = {
             hasProfile: true,
             isComplete: missingFields.length === 0,
-            completionPercentage: this.calculateCompletionPercentage(4, missingFields.length), // 4 required fields
+            completionPercentage: this.calculateCompletionPercentage(3, missingFields.length),
             missingFields,
             profileDetails: {
-                position: staff.position,
-                department: staff.department,
-                contactInfo: staff.contactInfo,
+              position: staff.position,
+              department: staff.department,
+              contactInfo: staff.contactInfo,
             }
           };
         }
@@ -312,12 +308,22 @@ export class UsersController {
       }
     });
 
+    // Special check for communicationPreferences object
+    if (donor.communicationPreferences && (
+      typeof donor.communicationPreferences.email !== 'boolean' ||
+      typeof donor.communicationPreferences.sms !== 'boolean'
+    )) {
+      if (!missing.includes('communicationPreferences')) {
+        missing.push('communicationPreferences');
+      }
+    }
+
     return missing;
   }
 
   private getMissingBeneficiaryFields(beneficiary: any): string[] {
     const missing: string[] = [];
-    const requiredFields = ['dateOfBirth', 'location', 'program', 'startCapital', 'businessType', 'trackingFrequency'];
+    const requiredFields = ['dateOfBirth', 'location', 'program', 'enrollmentDate', 'startCapital', 'businessType', 'trackingFrequency'];
 
     requiredFields.forEach(field => {
       if (!beneficiary[field]) {
@@ -325,14 +331,23 @@ export class UsersController {
       }
     });
 
-    // Check location details
+    // Special check for location object
     if (beneficiary.location && (
       !beneficiary.location.district ||
       !beneficiary.location.sector ||
       !beneficiary.location.cell ||
       !beneficiary.location.village
     )) {
-      missing.push('location_details');
+      if (!missing.includes('location')) {
+        missing.push('location_details');
+      }
+    }
+
+    // Check if program exists (not just the relation, but if it has data)
+    if (beneficiary.program && !beneficiary.program.id) {
+      if (!missing.includes('program')) {
+        missing.push('program');
+      }
     }
 
     return missing;
@@ -340,20 +355,32 @@ export class UsersController {
 
   private getMissingStaffFields(staff: any): string[] {
     const missing: string[] = [];
-    const requiredFields = ['department', 'permissions', 'employeeId'];
+    const requiredFields = ['position', 'department', 'contactInfo'];
 
     requiredFields.forEach(field => {
-      if (!staff[field] || (Array.isArray(staff[field]) && staff[field].length === 0)) {
+      if (!staff[field]) {
         missing.push(field);
       }
     });
+
+    // Special check for contactInfo object
+    if (staff.contactInfo && (
+      !staff.contactInfo.emergencyContact ||
+      !staff.contactInfo.emergencyPhone ||
+      !staff.contactInfo.address
+    )) {
+      if (!missing.includes('contactInfo')) {
+        missing.push('contactInfo_details');
+      }
+    }
 
     return missing;
   }
 
   private calculateCompletionPercentage(totalFields: number, missingCount: number): number {
     const completedFields = totalFields - missingCount;
-    return Math.round((completedFields / totalFields) * 100);
+  const percentage = Math.round((completedFields / totalFields) * 100);
+  return Math.max(0, Math.min(100, percentage));
   }
 
   //USER ACTIVATION ENDPOINT (Admin only)
