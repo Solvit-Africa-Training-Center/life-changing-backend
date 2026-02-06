@@ -10,6 +10,7 @@ import { CreateDonorDto } from '../dto/create-donor.dto';
 import { UpdateDonorDto } from '../dto/update-donor.dto';
 import { UserType } from '../../../config/constants';
 import { DonorStatsDto } from '../dto/donor-stats.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class DonorsService extends BaseService<Donor> {
@@ -48,25 +49,30 @@ export class DonorsService extends BaseService<Donor> {
       ...createDonorDto,
     });
 
-    return await this.donorsRepository.save(donor);
+    const savedDonor = await this.donorsRepository.save(donor);
+    return plainToInstance(Donor, savedDonor);
   }
 
   async findDonorByUserId(userId: string): Promise<Donor | null> {
-    return this.donorsRepository.findOne({
+    const donor = await this.donorsRepository.findOne({
       where: { user: { id: userId } },
       relations: ['user', 'donations', 'recurringDonations'],
     });
+
+    if (!donor) return null;
+
+    return plainToInstance(Donor, donor);
   }
 
   async updateDonor(donorId: string, updateDonorDto: UpdateDonorDto): Promise<Donor> {
     const donor = await this.findOne(donorId, ['user']);
-    
+
     if (!donor) {
       throw new NotFoundException('Donor not found');
     }
-
     Object.assign(donor, updateDonorDto);
-    return await this.donorsRepository.save(donor);
+    const updatedDonor = await this.donorsRepository.save(donor);
+    return plainToInstance(Donor, updatedDonor);
   }
 
   async updateDonorTotal(donorId: string, amount: number): Promise<void> {
@@ -78,25 +84,81 @@ export class DonorsService extends BaseService<Donor> {
 
   async getDonorsByCountry(country: string, paginationParams: PaginationParams): Promise<PaginatedResponse<Donor>> {
     const where: FindOptionsWhere<Donor> = { country };
-    return this.paginate(paginationParams, where, ['user']);
+    const result = await this.paginate(paginationParams, where, ['user']);
+
+    const transformedData = result.data.map(donor => plainToInstance(Donor, donor));
+
+    return {
+      ...result,
+      data: transformedData
+    };
   }
 
   async getTopDonors(limit: number = 10): Promise<Donor[]> {
-    return this.donorsRepository.find({
+    const donors = await this.donorsRepository.find({
       where: { anonymityPreference: false },
       order: { totalDonated: 'DESC' },
       take: limit,
       relations: ['user'],
     });
+
+    return donors.map(donor => plainToInstance(Donor, donor));
   }
 
   async searchDonors(query: string, paginationParams: PaginationParams): Promise<PaginatedResponse<Donor>> {
-    const where: FindOptionsWhere<Donor>[] = [
-      { fullName: query },
-      { country: query },
-    ];
+    const page = paginationParams.page || 1;
+    const limit = paginationParams.limit || 20;
+    const skip = (page - 1) * limit;
+    const sortBy = paginationParams.sortBy || 'createdAt';
+    const sortOrder = paginationParams.sortOrder || 'DESC';
 
-    return this.paginate(paginationParams, where.length > 0 ? where : undefined, ['user']);
+    // Create query builder for counting (to get total)
+    const countQueryBuilder = this.donorsRepository
+      .createQueryBuilder('donor')
+      .leftJoin('donor.user', 'user')
+      .where('LOWER(user.fullName) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orWhere('LOWER(donor.country) LIKE LOWER(:query)', { query: `%${query}%` });
+
+    // Get total count
+    const total = await countQueryBuilder.getCount();
+
+    // Create query builder for paginated results
+    const dataQueryBuilder = this.donorsRepository
+      .createQueryBuilder('donor')
+      .leftJoinAndSelect('donor.user', 'user')
+      .where('LOWER(user.fullName) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orWhere('LOWER(donor.country) LIKE LOWER(:query)', { query: `%${query}%` });
+
+    // Apply sorting
+    if (sortBy === 'fullName') {
+      dataQueryBuilder.orderBy('user.fullName', sortOrder);
+    } else if (sortBy.includes('user.')) {
+      const field = sortBy.replace('user.', '');
+      dataQueryBuilder.orderBy(`user.${field}`, sortOrder);
+    } else {
+      dataQueryBuilder.orderBy(`donor.${sortBy}`, sortOrder);
+    }
+
+    // Apply pagination
+    const donors = await dataQueryBuilder
+      .skip(skip)
+      .take(limit)
+      .getMany();
+
+    const transformedData = donors.map(donor => plainToInstance(Donor, donor));
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: transformedData,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 
   async getDonorStats(): Promise<DonorStatsDto> {
@@ -119,5 +181,16 @@ export class DonorsService extends BaseService<Donor> {
       recurringDonors,
       byCountry,
     };
+  }
+
+  async findOne(id: string, relations: string[] = []): Promise<Donor | null> {
+    const entity = await this.donorsRepository.findOne({
+      where: { id },
+      relations
+    });
+
+    if (!entity) return null;
+
+    return plainToInstance(Donor, entity);
   }
 }

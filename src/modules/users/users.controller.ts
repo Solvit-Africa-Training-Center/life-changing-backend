@@ -237,10 +237,9 @@ export class UsersController {
           profileStatus = {
             hasProfile: true,
             isComplete: missingFields.length === 0,
-            completionPercentage: this.calculateCompletionPercentage(5, missingFields.length), // 5 required fields
+            completionPercentage: this.calculateCompletionPercentage(4, missingFields.length), // 5 required fields
             missingFields,
             profileDetails: {
-              fullName: donor.fullName,
               country: donor.country,
               preferredCurrency: donor.preferredCurrency,
               totalDonated: donor.totalDonated,

@@ -22,9 +22,6 @@ export class Donor {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ name: 'full_name' })
-  fullName: string;
-
   @Column()
   country: string;
 

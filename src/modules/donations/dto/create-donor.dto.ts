@@ -14,10 +14,6 @@ export class CommunicationPreferencesDto {
 }
 
 export class CreateDonorDto {
-  @ApiProperty({ example: 'John Doe' })
-  @IsString()
-  fullName: string;
-
   @ApiProperty({ example: 'Rwanda' })
   @IsString()
   country: string;
