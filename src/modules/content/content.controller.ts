@@ -112,7 +112,7 @@ export class ContentController {
         if (isImage && file.size > 100 * 1024 * 1024) {
           return cb(
             new BadRequestException(
-              'Image size must not exceed 50MB',
+              'Image size must not exceed 100MB',
             ),
             false,
           );
