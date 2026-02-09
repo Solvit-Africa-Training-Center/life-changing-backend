@@ -78,6 +78,7 @@ export enum ProgramStatus {
   ACTIVE = 'active',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',
+  INACTIVE = 'INACTIVE',
 }
 
 // Payment Methods
@@ -133,6 +134,7 @@ export enum ReceiptPreference {
 }
 
 // Document Types
+// eslint-disable-next-line no-redeclare
 export enum DocumentType {
   ID_CARD = 'id_card',
   BIRTH_CERTIFICATE = 'birth_certificate',
@@ -194,7 +196,7 @@ export enum AuthorRole {
 }
 
 // Constants
-export const API_PREFIX = '/api/v1';
+export const API_PREFIX = '/api';
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 export const CACHE_TTL = 3600;
