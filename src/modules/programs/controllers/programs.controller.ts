@@ -11,9 +11,11 @@ import {
   UploadedFiles,
   UseInterceptors,
   UseGuards,
+  BadRequestException,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiConsumes, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiConsumes, ApiBearerAuth, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -82,8 +84,73 @@ export class ProgramsController {
     FileFieldsInterceptor([
       { name: 'coverImage', maxCount: 1 },
       { name: 'logo', maxCount: 1 },
-    ]),
+    ], {
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB max per file
+      },
+      fileFilter: (req, file, cb) => {
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+        if (!allowedMimes.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              `File type ${file.mimetype} not allowed. Allowed types: JPEG, PNG, WebP, SVG`
+            ),
+            false,
+          );
+        }
+        // Check file size (already handled by limits, but double-check)
+        if (file.size > 10 * 1024 * 1024) {
+          return cb(
+            new BadRequestException('File size must not exceed 10MB'),
+            false,
+          );
+        }
+
+        cb(null, true);
+      },
+    }),
   )
+  @ApiBody({
+    description: 'Create a new program with images',
+    schema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'object',
+          properties: {
+            en: { type: 'string', example: 'Women Entrepreneurship Program' },
+            rw: { type: 'string', example: 'Porogaramu yubucuruzi bwabagore' }
+          }
+        },
+        description: {
+          type: 'object',
+          properties: {
+            en: { type: 'string', example: 'Empowering women through business training' },
+            rw: { type: 'string', example: 'Gutera imbaraga abagore binyuze mu biganiro byubucuruzi' }
+          }
+        },
+        category: { type: 'string', example: 'entrepreneurship' },
+        sdgAlignment: { type: 'array', items: { type: 'number' }, example: [1, 5, 8] },
+        kpiTargets: { type: 'object', example: { beneficiaries: 100, capitalGrowth: 50 } },
+        startDate: { type: 'string', format: 'date', example: '2024-01-01' },
+        endDate: { type: 'string', format: 'date', example: '2024-12-31' },
+        budget: { type: 'number', example: 50000000 },
+        status: { type: 'string', example: 'active' },
+        projects: { type: 'array', items: { type: 'object' }},
+        coverImage: {
+          type: 'string',
+          format: 'binary',
+          description: 'Program cover image (max 10MB, JPEG/PNG/WebP/SVG)'
+        },
+        logo: {
+          type: 'string',
+          format: 'binary',
+          description: 'Program logo (max 10MB, JPEG/PNG/WebP/SVG)'
+        },
+      },
+      required: ['name', 'description', 'category', 'sdgAlignment', 'kpiTargets', 'startDate', 'budget']
+    },
+  })
   @ApiOperation({ summary: 'Create a new program (admin only)' })
   async createProgram(
     @Body() data: CreateProgramDTO,
@@ -100,7 +167,7 @@ export class ProgramsController {
     );
   }
 
-  @Patch(':id')
+ @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserType.ADMIN)
   @ApiBearerAuth()
@@ -109,8 +176,72 @@ export class ProgramsController {
     FileFieldsInterceptor([
       { name: 'coverImage', maxCount: 1 },
       { name: 'logo', maxCount: 1 },
-    ]),
+    ], {
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB max per file
+      },
+      fileFilter: (req, file, cb) => {
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+        
+        if (!allowedMimes.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              `File type ${file.mimetype} not allowed. Allowed types: JPEG, PNG, WebP, SVG`
+            ),
+            false,
+          );
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+          return cb(
+            new BadRequestException('File size must not exceed 10MB'),
+            false,
+          );
+        }
+
+        cb(null, true);
+      },
+    }),
   )
+  @ApiBody({
+    description: 'Update program with optional images',
+    schema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'object',
+          properties: {
+            en: { type: 'string', example: 'Updated Program Name' },
+            rw: { type: 'string', example: 'Porogaramu yihariye' }
+          },
+        },
+        description: {
+          type: 'object',
+          properties: {
+            en: { type: 'string', example: 'Updated description' },
+            rw: { type: 'string', example: 'Ibisobanuro byahinduwe' }
+          },
+        },
+        category: { type: 'string', example: 'entrepreneurship'},
+        sdgAlignment: { type: 'array', items: { type: 'number' }, example: [1, 5, 8]},
+        kpiTargets: { type: 'object', example: { beneficiaries: 150 }},
+        startDate: { type: 'string', format: 'date', example: '2024-01-01'},
+        endDate: { type: 'string', format: 'date', example: '2024-12-31' },
+        budget: { type: 'number', example: 60000000 },
+        status: { type: 'string', example: 'active' },
+        coverImage: {
+          type: 'string',
+          format: 'binary',
+          description: 'New cover image (max 10MB, JPEG/PNG/WebP/SVG)',
+        },
+        logo: {
+          type: 'string',
+          format: 'binary',
+          description: 'New logo (max 10MB, JPEG/PNG/WebP/SVG)',
+        },
+      }
+    },
+  })
   @ApiOperation({ summary: 'Update a program (admin only)' })
   async updateProgram(
     @Param('id') id: string,
@@ -137,5 +268,109 @@ export class ProgramsController {
   async deleteProgram(@Param('id') id: string) {
     await this.programsService.deleteProgram(id);
     return { message: 'Program deleted successfully' };
+  }
+
+  // ================= ADDITIONAL MEDIA ENDPOINTS =================
+
+  @Post(':id/cover')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserType.ADMIN)
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file', {
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+      
+      if (!allowedMimes.includes(file.mimetype)) {
+        return cb(
+          new BadRequestException(
+            `File type ${file.mimetype} not allowed. Allowed types: JPEG, PNG, WebP`
+          ),
+          false,
+        );
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        return cb(
+          new BadRequestException('File size must not exceed 10MB'),
+          false,
+        );
+      }
+
+      cb(null, true);
+    },
+  }))
+  @ApiOperation({ summary: 'Upload only program cover image (admin only)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Cover image file (max 10MB, JPEG/PNG/WebP)'
+        },
+      },
+    },
+  })
+  async uploadProgramCover(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.programsService.updateProgram(id, {}, file, undefined);
+  }
+
+  @Post(':id/logo')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserType.ADMIN)
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file', {
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB for logos
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/svg+xml'];
+      
+      if (!allowedMimes.includes(file.mimetype)) {
+        return cb(
+          new BadRequestException(
+            `File type ${file.mimetype} not allowed. Allowed types: JPEG, PNG, SVG`
+          ),
+          false,
+        );
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        return cb(
+          new BadRequestException('File size must not exceed 5MB'),
+          false,
+        );
+      }
+
+      cb(null, true);
+    },
+  }))
+  @ApiOperation({ summary: 'Upload only program logo (admin only)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Logo file (max 5MB, JPEG/PNG/SVG)'
+        },
+      },
+    },
+  })
+  async uploadProgramLogo(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.programsService.updateProgram(id, {}, undefined, file);
   }
 }
