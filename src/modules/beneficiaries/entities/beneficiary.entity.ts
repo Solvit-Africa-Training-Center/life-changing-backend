@@ -26,9 +26,6 @@ export class Beneficiary {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ name: 'full_name' })
-  fullName: string;
-
   @Column({ name: 'date_of_birth', type: 'date' })
   dateOfBirth: Date;
 
@@ -40,9 +37,9 @@ export class Beneficiary {
     village: string;
   };
 
-  @ManyToOne(() => Program, (program) => program.beneficiaries)
+  @ManyToOne(() => Program, (program) => program.beneficiaries, { nullable: true })
   @JoinColumn({ name: 'program_id' })
-  program: Program;
+  program: Program | null;
 
   @Column({
     type: 'enum',
@@ -51,11 +48,12 @@ export class Beneficiary {
   })
   status: BeneficiaryStatus;
 
-  @Column({ name: 'enrollment_date', type: 'date' })
-  enrollmentDate: Date;
+  @Column({ name: 'enrollment_date', type: 'date', nullable: true })
+  enrollmentDate: Date | null;
 
   @Column({ name: 'exit_date', type: 'date', nullable: true })
-  exitDate: Date;
+  exitDate: Date | null;
+
 
   @Column({ name: 'start_capital', type: 'decimal', precision: 12, scale: 2 })
   startCapital: number;
@@ -75,10 +73,10 @@ export class Beneficiary {
   trackingFrequency: TrackingFrequency;
 
   @Column({ name: 'last_tracking_date', type: 'date', nullable: true })
-  lastTrackingDate: Date;
+  lastTrackingDate: Date | null;
 
   @Column({ name: 'next_tracking_date', type: 'date', nullable: true })
-  nextTrackingDate: Date;
+  nextTrackingDate: Date | null;
 
   @Column({ name: 'profile_completion', default: 0 })
   profileCompletion: number;

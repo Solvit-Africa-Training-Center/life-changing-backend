@@ -7,7 +7,7 @@ import {
   ManyToOne 
 } from 'typeorm';
 import { Program } from './program.entity';
-import { Staff } from '../../users/entities/staff.entity';
+import { Staff } from '../../admin/entities/staff.entity';
 import { MetricPeriod, MetricSource } from '../../../config/constants';
 
 @Entity('impact_metrics')

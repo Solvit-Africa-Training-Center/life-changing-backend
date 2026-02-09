@@ -1,5 +1,5 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -64,6 +64,9 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
+    // Enable class-transformer serialization
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
   // Swagger documentation
   if (configService.get('config.features.enableSwagger')) {
     const config = new DocumentBuilder()
@@ -74,10 +77,11 @@ async function bootstrap() {
       .addTag('auth', 'Authentication endpoints')
       .addTag('users', 'User management')
       .addTag('beneficiaries', 'Beneficiary management')
+      .addTag('staff', 'Staff dashboard')
+      .addTag('donors', 'Donor dashboard')
       .addTag('donations', 'Donation processing')
       .addTag('programs', 'Program management')
       .addTag('ussd', 'USSD integration')
-      .addTag('admin', 'Admin dashboard')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);

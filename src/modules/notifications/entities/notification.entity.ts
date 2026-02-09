@@ -10,7 +10,7 @@ import { User } from '../../users/entities/user.entity';
 import { NotificationType, NotificationStatus, NotificationChannel } from '../../../config/constants';
 
 @Entity('notifications')
-export class Notification {
+export class Notif {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

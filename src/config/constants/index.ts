@@ -5,26 +5,20 @@ export enum UserType {
   BENEFICIARY = 'beneficiary',
 }
 
-// Staff Roles (from your staff table)
-export enum StaffRole {
-  SUPER_ADMIN = 'super_admin',
-  ADMIN = 'admin',
-  PROGRAM_MANAGER = 'program_manager',
-  DATA_ENTRY = 'data_entry',
-  VIEWER = 'viewer',
-}
-
 // Languages
 export enum Language {
   EN = 'en',
   RW = 'rw',
 }
 
+// #4c9789
 // Beneficiary Status
 export enum BeneficiaryStatus {
   ACTIVE = 'active',
   GRADUATED = 'graduated',
   INACTIVE = 'inactive',
+  WAITING = 'waiting',
+  PENDING = 'pending',
 }
 
 // Tracking Frequency
@@ -194,7 +188,7 @@ export enum AuthorRole {
 }
 
 // Constants
-export const API_PREFIX = '/api/v1';
+export const API_PREFIX = '/api';
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 export const CACHE_TTL = 3600;

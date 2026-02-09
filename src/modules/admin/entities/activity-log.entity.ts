@@ -44,6 +44,9 @@ export class ActivityLog {
   @Column({ name: 'user_agent', nullable: true })
   userAgent: string;
 
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
   @Column({ type: 'jsonb', nullable: true })
   location: {
     country: string;
