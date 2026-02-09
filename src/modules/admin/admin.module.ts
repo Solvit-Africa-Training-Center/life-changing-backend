@@ -19,5 +19,6 @@ import { User } from '../users/entities/user.entity';
   controllers: [StaffController, AdminController],
   providers: [StaffService, ActivityLogService],
   exports: [StaffService, ActivityLogService],
+
 })
 export class AdminModule {}

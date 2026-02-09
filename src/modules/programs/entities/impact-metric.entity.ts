@@ -1,10 +1,10 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   JoinColumn,
-  ManyToOne 
+  ManyToOne,
 } from 'typeorm';
 import { Program } from './program.entity';
 import { Staff } from '../../admin/entities/staff.entity';

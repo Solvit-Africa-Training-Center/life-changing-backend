@@ -1,10 +1,10 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
   JoinColumn,
-  CreateDateColumn, 
-  ManyToOne 
+  CreateDateColumn,
+  ManyToOne,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -33,10 +33,13 @@ export class ActivityLog {
   newValues: Record<string, any>;
 
   @Column({ type: 'jsonb', nullable: true })
-  changes: Record<string, {
-    old: any;
-    new: any;
-  }>;
+  changes: Record<
+    string,
+    {
+      old: any;
+      new: any;
+    }
+  >;
 
   @Column({ name: 'ip_address' })
   ipAddress: string;

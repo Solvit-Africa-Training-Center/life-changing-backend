@@ -1,3 +1,6 @@
+import { webcrypto } from 'node:crypto';
+
+(globalThis as any).crypto = webcrypto;
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ClassSerializerInterceptor, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -15,13 +18,13 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-  const reflector = app.get(Reflector);
+  const _reflector = app.get(Reflector);
 
   // Global middleware
   app.use(helmet());
   app.use(compression());
   app.use(new LoggingMiddleware().use);
-  
+
   // Rate limiting
   app.use(
     rateLimit({
@@ -51,12 +54,12 @@ async function bootstrap() {
   // Global pipes
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,
       },
+      whitelist: false, // ✅ REQUIRED for multipart + nested DTOs
+      forbidNonWhitelisted: false, // ✅ REQUIRED
     }),
   );
 
@@ -90,11 +93,10 @@ async function bootstrap() {
 
   const port = configService.get('config.port');
   await app.listen(port);
-  
   console.log(`🚀 Application is running on: ${await app.getUrl()}`);
   if (configService.get('config.features.enableSwagger')) {
     console.log(`📚 API Documentation: ${await app.getUrl()}/api/docs`);
   }
 }
 
-bootstrap();
+void bootstrap();

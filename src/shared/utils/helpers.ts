@@ -30,7 +30,7 @@ export class Helpers {
   formatPhoneNumber(phone: string): string {
     // Remove non-digits
     const digits = phone.replace(/\D/g, '');
-    
+
     // Format for Rwanda
     if (digits.startsWith('250')) {
       return `+${digits}`;
@@ -39,7 +39,7 @@ export class Helpers {
     } else if (digits.length === 9) {
       return `+250${digits}`;
     }
-    
+
     return `+${digits}`;
   }
 
@@ -73,11 +73,11 @@ export class Helpers {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age;
   }
 }

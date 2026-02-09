@@ -72,6 +72,7 @@ export enum ProgramStatus {
   ACTIVE = 'active',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',
+  INACTIVE = 'INACTIVE',
 }
 
 // Payment Methods
@@ -127,6 +128,7 @@ export enum ReceiptPreference {
 }
 
 // Document Types
+// eslint-disable-next-line no-redeclare
 export enum DocumentType {
   ID_CARD = 'id_card',
   BIRTH_CERTIFICATE = 'birth_certificate',
