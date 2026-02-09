@@ -35,7 +35,7 @@ export class ContentController {
   }
 
   @Get('stories/featured')
-  @ApiOperation({ summary: 'Get featured stories' })
+  @ApiOperation({ summary: 'Get featured storiess' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   getFeaturedStories(@Query('limit') limit = 5) {
     return this.contentService.getFeaturedStories(+limit);
@@ -143,7 +143,7 @@ export class ContentController {
     return this.contentService.uploadStoryMedia(storyId, files);
   }
 
-
+//admin must delete media by public id
   @Delete('stories/:id/media')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
