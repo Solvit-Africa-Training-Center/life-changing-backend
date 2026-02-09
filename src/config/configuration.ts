@@ -38,8 +38,17 @@ export default registerAs('config', () => ({
   // Payment Gateways
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     currency: process.env.STRIPE_CURRENCY || 'RWF',
+    enableRwf: process.env.STRIPE_ENABLE_RWF === 'true',
+  },
+
+  paypack: {
+    baseUrl: process.env.PAYPACK_BASE_URL || 'https://payments.paypack.rw/api',
+    clientId: process.env.PAYPACK_CLIENT_ID,
+    clientSecret: process.env.PAYPACK_CLIENT_SECRET,
+    callbackUrl: process.env.PAYPACK_CALLBACK_URL,
   },
 
   mobileMoney: {
