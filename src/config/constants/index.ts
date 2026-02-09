@@ -78,9 +78,9 @@ export enum ProgramStatus {
 // Payment Methods
 export enum PaymentMethod {
   CARD = 'card',
-  MOBILE_MONEY = 'mobile_money',
-  BANK_TRANSFER = 'bank_transfer',
-  PAYPAL = 'paypal',
+  MTN_MOBILE_MONEY = 'mtn_mobile_money',
+  AIRTEL_MONEY = 'airtel_money',
+  BANK_TRANSFER = 'bank_transfer'
 }
 
 // Payment Status
@@ -89,6 +89,13 @@ export enum PaymentStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
   REFUNDED = 'refunded',
+}
+
+// Payment Provider
+export enum PaymentProvider {
+  STRIPE = 'stripe',
+  PAYPACK = 'paypack',
+  MANUAL = 'manual',
 }
 
 // Donation Types
