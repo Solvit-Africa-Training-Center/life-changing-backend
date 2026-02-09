@@ -38,8 +38,8 @@ export class CloudinaryService {
    * Upload a file buffer to Cloudinary
    */
   async uploadFile(
+    folder: string = 'uploads',
     file: Express.Multer.File,
-    folder: string = 'uploads'
   ): Promise<UploadResult> {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
@@ -66,6 +66,32 @@ export class CloudinaryService {
       readableStream.pipe(uploadStream);
     });
   }
+
+  // Add this method for program-specific uploads
+async uploadProgramCover(programId: string, file: Express.Multer.File): Promise<UploadResult> {
+  const folder = `programs/${programId}/cover`;
+  return this.uploadFile(folder, file);
+}
+
+async uploadProgramLogo(programId: string, file: Express.Multer.File): Promise<UploadResult> {
+  const folder = `programs/${programId}/logo`;
+  return this.uploadFile(folder, file);
+}
+
+async uploadProjectCover(programId: string, projectId: string, file: Express.Multer.File): Promise<UploadResult> {
+  const folder = `programs/${programId}/projects/${projectId}/cover`;
+  return this.uploadFile(folder, file);
+}
+
+async uploadProjectGallery(programId: string, projectId: string, file: Express.Multer.File): Promise<UploadResult> {
+  const folder = `programs/${programId}/projects/${projectId}/gallery`;
+  return this.uploadFile(folder, file);
+}
+
+async uploadProjectMedia(programId: string, projectId: string, file: Express.Multer.File): Promise<UploadResult> {
+  const folder = `programs/${programId}/projects/${projectId}`;
+  return this.uploadFile(folder, file);
+}
 
   /**
    * Upload a base64 string to Cloudinary

@@ -56,7 +56,7 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
 
     if (file) {
       // Handle file upload via multer
-      uploadResult = await this.cloudinaryService.uploadFile(file, folder);
+      uploadResult = await this.cloudinaryService.uploadFile(folder, file);
     } else if (uploadDocumentDto.fileBase64) {
       // Handle base64 file upload
       uploadResult = await this.cloudinaryService.uploadBase64File(
@@ -110,7 +110,7 @@ export class BeneficiaryDocumentsService extends BaseService<BeneficiaryDocument
     const documents: BeneficiaryDocument[] = [];
 
     for (const file of files) {
-      const uploadResult = await this.cloudinaryService.uploadFile(file, folder);
+      const uploadResult = await this.cloudinaryService.uploadFile(folder, file);
 
       const document = this.documentsRepository.create({
         beneficiary,

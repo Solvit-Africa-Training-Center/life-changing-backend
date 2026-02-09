@@ -70,14 +70,19 @@ export class Project {
   @Column({ name: 'is_featured', default: false })
   isFeatured: boolean;
 
-  @Column({ name: 'cover_image', nullable: true })
-  coverImage: string;
+  @Column({ name: 'cover_image', type: 'varchar', nullable: true })
+  coverImage: string | null;
+
+  @Column({ name: 'cover_image_public_id', type: 'varchar', nullable: true })
+  coverImagePublicId: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
   gallery: Array<{
     url: string;
+    publicId: string;
     caption: string;
     type: string;
+    uploadedAt: Date;
   }>;
 
   @CreateDateColumn({ name: 'created_at' })

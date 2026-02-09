@@ -70,4 +70,29 @@ export abstract class BaseService<T extends BaseEntity> {
   async delete(id: string): Promise<void> {
     await this.repository.delete(id);
   }
+
+  async count(where?: FindOptionsWhere<T> | FindOptionsWhere<T>[]): Promise<number> {
+    return this.repository.count({ where });
+  }
+
+  async findAll(
+    where?: FindOptionsWhere<T> | FindOptionsWhere<T>[],
+    relations?: string[],
+    order?: FindOptionsOrder<T>,
+  ): Promise<T[]> {
+    return this.repository.find({
+      where,
+      relations,
+      order,
+    });
+  }
+
+   async exists(where: FindOptionsWhere<T> | FindOptionsWhere<T>[]): Promise<boolean> {
+    const count = await this.repository.count({ where });
+    return count > 0;
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.repository.softDelete(id);
+  }
 }

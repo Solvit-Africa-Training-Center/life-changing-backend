@@ -43,12 +43,11 @@ export class Program {
   @Column({ name: 'kpi_targets', type: 'jsonb' })
   kpiTargets: Record<string, any>;
 
-  // ✅ FIXED — timestamp instead of date
   @Column({ name: 'start_date', type: 'timestamp' })
   startDate: Date;
 
   @Column({ name: 'end_date', type: 'timestamp', nullable: true })
-  endDate?: Date;
+  endDate?: Date | null; 
 
   @Column({
     type: 'enum',
@@ -79,16 +78,16 @@ export class Program {
   fundsUtilized: number;
 
   // ================= CLOUDINARY =================
-  @Column({ name: 'cover_image', nullable: true })
+  @Column({ name: 'cover_image', type: 'varchar', nullable: true })
   coverImage?: string;
 
-  @Column({ name: 'cover_image_public_id', nullable: true })
+  @Column({ name: 'cover_image_public_id', type: 'varchar',nullable: true })
   coverImagePublicId?: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   logo?: string;
 
-  @Column({ name: 'logo_public_id', nullable: true })
+  @Column({ type: 'varchar', name: 'logo_public_id', nullable: true })
   logoPublicId?: string;
 
   // ================= META =================
