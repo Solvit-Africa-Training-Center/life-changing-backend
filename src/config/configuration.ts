@@ -111,4 +111,16 @@ export default registerAs('config', () => ({
     enablePayment: process.env.ENABLE_PAYMENT !== 'false',
     enableSwagger: process.env.ENABLE_SWAGGER !== 'false',
   },
+
+  // Payment Settings
+  payment: {
+    defaultCurrency: process.env.DEFAULT_CURRENCY || 'RWF',
+    exchangeRate: {
+      usdToRwf: parseFloat(process.env.EXCHANGE_RATE_USD_TO_RWF || '1300'),
+      eurToRwf: parseFloat(process.env.EXCHANGE_RATE_EUR_TO_RWF || '1400'),
+    },
+    enableStripe: process.env.ENABLE_STRIPE !== 'false',
+    enablePaypack: process.env.ENABLE_PAYPACK !== 'false',
+  },
+
 }));
