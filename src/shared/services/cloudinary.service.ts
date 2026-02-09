@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { v2 as cloudinary, UploadApiResponse, UploadApiOptions } from 'cloudinary';
 import { Readable } from 'stream';
 
@@ -29,6 +29,10 @@ export class CloudinaryService {
 
   // eslint-disable-next-line no-undef
   async uploadFile(file: Express.Multer.File, folder: string): Promise<UploadResult> {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -38,8 +42,16 @@ export class CloudinaryService {
           unique_filename: true,
         } as UploadApiOptions,
         (error, result: UploadApiResponse) => {
-          if (error) return reject(error);
-          if (!result) return reject(new Error('No upload result'));
+          if (error) {
+            return reject(
+              new InternalServerErrorException(error.message || 'Cloudinary upload failed'),
+            );
+          }
+
+          if (!result) {
+            return reject(new InternalServerErrorException('No upload result from Cloudinary'));
+          }
+
           resolve(this.mapResult(result));
         },
       );
@@ -52,6 +64,10 @@ export class CloudinaryService {
   }
 
   async uploadBase64(base64: string, folder: string): Promise<UploadResult> {
+    if (!base64) {
+      throw new BadRequestException('No base64 data provided');
+    }
+
     const result = await cloudinary.uploader.upload(base64, {
       folder,
       resource_type: 'auto',
@@ -59,44 +75,43 @@ export class CloudinaryService {
       unique_filename: true,
     });
 
-    if (!result) throw new Error('No upload result');
+    if (!result) {
+      throw new InternalServerErrorException('No upload result from Cloudinary');
+    }
+
     return this.mapResult(result);
   }
 
   async deleteFile(publicId: string): Promise<void> {
+    if (!publicId) {
+      throw new BadRequestException('Public ID is required');
+    }
+
     await cloudinary.uploader.destroy(publicId);
   }
 
   async deleteFiles(publicIds: string[]): Promise<void> {
+    if (!publicIds || publicIds.length === 0) {
+      throw new BadRequestException('Public IDs are required');
+    }
+
     await cloudinary.api.delete_resources(publicIds);
   }
 
   // =====================================================
-  // PROGRAM MODULE HELPERS (THIS IS WHAT YOU ASKED FOR)
+  // PROGRAM MODULE HELPERS
   // =====================================================
 
-  /**
-   * Upload program cover image
-   * Folder: programs/{programId}
-   */
   // eslint-disable-next-line no-undef
   async uploadProgramCover(programId: string, file: Express.Multer.File): Promise<UploadResult> {
     return this.uploadFile(file, `programs/${programId}/cover`);
   }
 
-  /**
-   * Upload program logo
-   * Folder: programs/{programId}/logo
-   */
   // eslint-disable-next-line no-undef
   async uploadProgramLogo(programId: string, file: Express.Multer.File): Promise<UploadResult> {
     return this.uploadFile(file, `programs/${programId}/logo`);
   }
 
-  /**
-   * Upload project media under a program
-   * Folder: programs/{programId}/projects/{projectId}
-   */
   async uploadProjectMedia(
     programId: string,
     projectId: string,

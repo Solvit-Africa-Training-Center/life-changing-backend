@@ -1,16 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Project } from './entities/project.entity';
 import { PaginationParams, PaginatedResponse } from '../../shared/interfaces/pagination.interface';
+import { CloudinaryService } from '../../shared/services/cloudinary.service';
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
+
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
+  // ================= GET PROJECTS BY PROGRAM =================
   async findProjectsByProgram(
     programId: string,
     params: PaginationParams,
@@ -47,5 +52,29 @@ export class ProjectsService {
         hasPreviousPage: page > 1,
       },
     };
+  }
+
+  // ================= PROJECT MEDIA =================
+  // eslint-disable-next-line no-undef
+  async uploadProjectMedia(
+    programId: string,
+    projectId: string,
+    // eslint-disable-next-line no-undef
+    file: Express.Multer.File,
+  ): Promise<{ url: string; publicId: string }> {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
+    const project = await this.projectRepository.findOne({
+      where: { id: projectId },
+      relations: ['program'],
+    });
+
+    if (!project || project.program.id !== programId) {
+      throw new NotFoundException('Project not found for this program');
+    }
+
+    return this.cloudinaryService.uploadProjectMedia(programId, projectId, file);
   }
 }

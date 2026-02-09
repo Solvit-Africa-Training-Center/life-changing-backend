@@ -2,12 +2,12 @@ import { Controller, Post, Param, UploadedFile, UseInterceptors } from '@nestjs/
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-import { CloudinaryService } from '../../shared/services/cloudinary.service';
+import { ProjectsService } from './projects.service';
 
 @ApiTags('Projects')
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly cloudinaryService: CloudinaryService) {}
+  constructor(private readonly projectsService: ProjectsService) {}
 
   // ⭐ Upload project media
   @Post(':programId/:projectId/media')
@@ -19,6 +19,6 @@ export class ProjectsController {
     // eslint-disable-next-line no-undef
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.cloudinaryService.uploadProjectMedia(programId, projectId, file);
+    return this.projectsService.uploadProjectMedia(programId, projectId, file);
   }
 }

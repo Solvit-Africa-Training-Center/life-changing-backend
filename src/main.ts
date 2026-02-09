@@ -54,12 +54,12 @@ async function bootstrap() {
   // Global pipes
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,
       },
+      whitelist: false, // ✅ REQUIRED for multipart + nested DTOs
+      forbidNonWhitelisted: false, // ✅ REQUIRED
     }),
   );
 

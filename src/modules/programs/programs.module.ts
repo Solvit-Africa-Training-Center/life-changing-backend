@@ -8,10 +8,12 @@ import { Program } from './entities/program.entity';
 import { Project } from './entities/project.entity';
 import { ImpactMetric } from './entities/impact-metric.entity';
 
+import { CloudinaryService } from '../../shared/services/cloudinary.service';
+
 @Module({
   imports: [TypeOrmModule.forFeature([Program, Project, ImpactMetric])],
   controllers: [ProgramsController],
-  providers: [ProgramsService],
+  providers: [ProgramsService, CloudinaryService],
   exports: [ProgramsService],
 })
 export class ProgramsModule {}

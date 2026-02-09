@@ -1,3 +1,5 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { BadRequestException } from '@nestjs/common';
 import {
   IsString,
   IsOptional,
@@ -7,28 +9,69 @@ import {
   IsObject,
   IsArray,
   ValidateNested,
+  Allow,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 import { ProgramCategory, ProgramStatus } from '../../../config/constants';
 import { CreateProjectDTO } from './create-project.dto';
 
-// ⭐ Reusable multilingual DTO
+/* ---------------------------------- */
+/* Localized Text DTO */
+/* ---------------------------------- */
 export class LocalizedTextDTO {
+  @Allow()
   @IsString()
   en: string;
 
+  @Allow()
   @IsString()
   rw: string;
 }
 
+/* ---------------------------------- */
+/* SAFE JSON PARSER (Swagger + multipart safe) */
+/* ---------------------------------- */
+const parseJson = ({ value }) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  // Already parsed
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    // Handle: "4,8,10"
+    if (/^\d+(,\d+)*$/.test(trimmed)) {
+      return trimmed.split(',').map(Number);
+    }
+
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      throw new BadRequestException(`Invalid JSON format. Received: ${value}`);
+    }
+  }
+
+  return value;
+};
+
+/* ---------------------------------- */
+/* Create Program DTO */
+/* ---------------------------------- */
 export class CreateProgramDTO {
-  // ⭐ Multilingual name validation
+  @Allow()
+  @Transform(parseJson)
   @ValidateNested()
   @Type(() => LocalizedTextDTO)
   name: LocalizedTextDTO;
 
-  // ⭐ Multilingual description validation
+  @Allow()
+  @Transform(parseJson)
   @ValidateNested()
   @Type(() => LocalizedTextDTO)
   description: LocalizedTextDTO;
@@ -36,53 +79,62 @@ export class CreateProgramDTO {
   @IsEnum(ProgramCategory)
   category: ProgramCategory;
 
+  @Allow()
+  @Transform(parseJson)
   @IsArray()
+  @IsNumber({}, { each: true })
   sdgAlignment: number[];
 
+  @Allow()
+  @Transform(parseJson)
   @IsObject()
   kpiTargets: Record<string, any>;
 
-  // ⭐ JSON friendly date validation
   @IsDateString()
   startDate: string;
 
-  @IsOptional()
-  @IsDateString()
+  @Allow()
+  @Transform(({ value }) => {
+    if (!value || value === '') return undefined;
+    return value;
+  })
   endDate?: string;
 
+  @Type(() => Number)
   @IsNumber()
   budget: number;
 
   @IsOptional()
-  @IsNumber()
+  @Type(() => Number)
   fundsAllocated?: number;
 
   @IsOptional()
-  @IsNumber()
+  @Type(() => Number)
   fundsUtilized?: number;
 
-  @IsOptional()
-  @IsString()
-  coverImage?: string;
+  /* -------- Files (multipart) -------- */
+  @Allow()
+  @ApiPropertyOptional({ type: 'string', format: 'binary' })
+  coverImage?: any;
+
+  @Allow()
+  @ApiPropertyOptional({ type: 'string', format: 'binary' })
+  logo?: any;
 
   @IsOptional()
-  @IsString()
-  logo?: string;
-
-  @IsOptional()
-  @IsNumber()
+  @Type(() => Number)
   sortOrder?: number;
 
-  @IsOptional()
-  @IsObject()
+  @Allow()
+  @Transform(parseJson)
   metadata?: Record<string, any>;
 
   @IsOptional()
   @IsEnum(ProgramStatus)
   status?: ProgramStatus;
 
-  // ⭐ PROGRAM → PROJECT LINKING
-  @IsOptional()
+  @Allow()
+  @Transform(parseJson)
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateProjectDTO)

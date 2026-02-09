@@ -12,6 +12,7 @@ import { PaginationParams, PaginatedResponse } from '../../shared/interfaces/pag
 
 import { ProgramCategory, ProgramStatus } from '../../config/constants';
 import { CreateProgramDTO } from './dto/create-program.dto';
+import { UpdateProgramDTO } from './dto/update-program.dto';
 
 @Injectable()
 export class ProgramsService extends BaseService<Program> {
@@ -105,11 +106,46 @@ export class ProgramsService extends BaseService<Program> {
   }
 
   // ================= UPDATE =================
-  async updateProgram(id: string, data: Partial<Program>): Promise<Program | null> {
+  async updateProgram(
+    id: string,
+    dto: UpdateProgramDTO,
+    // eslint-disable-next-line no-undef
+    coverImage?: Express.Multer.File,
+    // eslint-disable-next-line no-undef
+    logo?: Express.Multer.File,
+  ): Promise<Program | null> {
     const program = await this.findOne(id);
-    if (!program) throw new NotFoundException('Program not found');
+    if (!program) {
+      throw new NotFoundException('Program not found');
+    }
 
-    await this.programRepository.update(id, data);
+    // 1️⃣ Update normal fields
+    Object.assign(program, dto);
+
+    // 2️⃣ Update cover image (Cloudinary)
+    if (coverImage) {
+      if (program.coverImagePublicId) {
+        await this.cloudinaryService.deleteFile(program.coverImagePublicId);
+      }
+
+      const upload = await this.cloudinaryService.uploadProgramCover(id, coverImage);
+      program.coverImage = upload.url;
+      program.coverImagePublicId = upload.publicId;
+    }
+
+    // 3️⃣ Update logo (Cloudinary)
+    if (logo) {
+      if (program.logoPublicId) {
+        await this.cloudinaryService.deleteFile(program.logoPublicId);
+      }
+
+      const upload = await this.cloudinaryService.uploadProgramLogo(id, logo);
+      program.logo = upload.url;
+      program.logoPublicId = upload.publicId;
+    }
+
+    // 4️⃣ Save & return
+    await this.programRepository.save(program);
     return this.findProgramById(id);
   }
 
