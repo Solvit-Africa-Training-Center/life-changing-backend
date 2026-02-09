@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, JoinColumn,CreateDateColumn, UpdateDateColumn,  DeleteDateColumn,ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+} from 'typeorm';
 import { Program } from '../../programs/entities/program.entity';
 import { Language, AuthorRole } from '../../../config/constants';
 
@@ -40,15 +48,12 @@ export class Story {
   beneficiaryId: string;
 
   @Column({ type: 'jsonb', nullable: true })
-media?: Array<{
-  url: string;
-  publicId: string;
-  type: 'image' | 'video';
-  thumbnail: string;
-  isDeleted: boolean; // Soft delete flag
-  deletedAt?: string; //  ISO string for deletion timestamp
-}>;
-
+  media: Array<{
+    url: string;
+    type: 'image' | 'video';
+    caption: string;
+    thumbnail: string;
+  }>;
 
   @Column({ name: 'is_featured', default: false })
   isFeatured: boolean;
@@ -84,8 +89,4 @@ media?: Array<{
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
-  
 }

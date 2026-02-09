@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { 
   Entity, 
   PrimaryGeneratedColumn, 
@@ -7,6 +8,17 @@ import {
   OneToOne, 
   JoinColumn, 
   OneToMany 
+=======
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  JoinColumn,
+  OneToMany,
+>>>>>>> origin/dev
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Donation } from './donation.entity';
@@ -22,9 +34,12 @@ export class Donor {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
+<<<<<<< HEAD
   @Column({ name: 'full_name' })
   fullName: string;
 
+=======
+>>>>>>> origin/dev
   @Column()
   country: string;
 
@@ -77,4 +92,8 @@ export class Donor {
 
   @OneToMany(() => RecurringDonation, (recurring) => recurring.donor)
   recurringDonations: RecurringDonation[];
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/dev

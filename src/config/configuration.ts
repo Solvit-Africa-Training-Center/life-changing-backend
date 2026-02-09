@@ -6,9 +6,7 @@ export default registerAs('config', () => ({
   port: parseInt(process.env.PORT || '3000', 10),
   baseUrl: process.env.BASE_URL || 'http://localhost:3000',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3001',
-  apiPrefix: process.env.API_PREFIX || '/api',
-
-  
+  apiPrefix: process.env.API_PREFIX || '/api/v1',
 
   // Database
   database: {

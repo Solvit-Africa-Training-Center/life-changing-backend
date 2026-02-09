@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { 
   Entity, 
   PrimaryGeneratedColumn, 
@@ -8,6 +9,18 @@ import {
 } from 'typeorm';
 import { Program } from './program.entity';
 import { Staff } from '../../users/entities/staff.entity';
+=======
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  JoinColumn,
+  ManyToOne,
+} from 'typeorm';
+import { Program } from './program.entity';
+import { Staff } from '../../admin/entities/staff.entity';
+>>>>>>> origin/dev
 import { MetricPeriod, MetricSource } from '../../../config/constants';
 
 @Entity('impact_metrics')
@@ -55,4 +68,8 @@ export class ImpactMetric {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/dev

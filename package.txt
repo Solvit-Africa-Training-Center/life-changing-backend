@@ -66,3 +66,26 @@ curl http://localhost:3000/api/v1/health/db
 
 # Test API documentation
 open http://localhost:3000/api/docs
+
+
+=========================================
+
+# 1. Make sure Docker Toolbox is running
+docker-machine start default
+docker-machine env default | Invoke-Expression
+
+# 2. Stop any existing containers
+docker-compose down
+
+# 3. Build and start
+docker-compose up --build -d
+
+# 4. Check status
+docker-compose ps
+
+# 5. View logs
+docker-compose logs -f backend
+
+docker-compose logs postgres
+docker-compose logs redis
+docker-compose logs backend

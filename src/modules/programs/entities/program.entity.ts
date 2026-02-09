@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { 
   Entity, 
   PrimaryGeneratedColumn, 
@@ -6,6 +7,17 @@ import {
   UpdateDateColumn, 
   OneToMany 
 } from 'typeorm';
+=======
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+
+>>>>>>> origin/dev
 import { Beneficiary } from '../../beneficiaries/entities/beneficiary.entity';
 import { Project } from './project.entity';
 import { ImpactMetric } from './impact-metric.entity';
@@ -42,11 +54,20 @@ export class Program {
   @Column({ name: 'kpi_targets', type: 'jsonb' })
   kpiTargets: Record<string, any>;
 
+<<<<<<< HEAD
   @Column({ name: 'start_date', type: 'date' })
   startDate: Date;
 
   @Column({ name: 'end_date', type: 'date', nullable: true })
   endDate: Date;
+=======
+  // ✅ FIXED — timestamp instead of date
+  @Column({ name: 'start_date', type: 'timestamp' })
+  startDate: Date;
+
+  @Column({ name: 'end_date', type: 'timestamp', nullable: true })
+  endDate?: Date;
+>>>>>>> origin/dev
 
   @Column({
     type: 'enum',
@@ -58,6 +79,7 @@ export class Program {
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   budget: number;
 
+<<<<<<< HEAD
   @Column({ name: 'funds_allocated', type: 'decimal', precision: 15, scale: 2, default: 0 })
   fundsAllocated: number;
 
@@ -70,11 +92,49 @@ export class Program {
   @Column({ nullable: true })
   logo: string;
 
+=======
+  @Column({
+    name: 'funds_allocated',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
+  fundsAllocated: number;
+
+  @Column({
+    name: 'funds_utilized',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
+  fundsUtilized: number;
+
+  // ================= CLOUDINARY =================
+  @Column({ name: 'cover_image', nullable: true })
+  coverImage?: string;
+
+  @Column({ name: 'cover_image_public_id', nullable: true })
+  coverImagePublicId?: string;
+
+  @Column({ nullable: true })
+  logo?: string;
+
+  @Column({ name: 'logo_public_id', nullable: true })
+  logoPublicId?: string;
+
+  // ================= META =================
+>>>>>>> origin/dev
   @Column({ name: 'sort_order', default: 0 })
   sortOrder: number;
 
   @Column({ type: 'jsonb', nullable: true })
+<<<<<<< HEAD
   metadata: Record<string, any>;
+=======
+  metadata?: Record<string, any>;
+>>>>>>> origin/dev
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -82,8 +142,13 @@ export class Program {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
+<<<<<<< HEAD
   // Relations
   @OneToMany(() => Project, (project) => project.program)
+=======
+  // ================= RELATIONS =================
+  @OneToMany(() => Project, (project) => project.program, { cascade: true })
+>>>>>>> origin/dev
   projects: Project[];
 
   @OneToMany(() => Beneficiary, (beneficiary) => beneficiary.program)
@@ -97,4 +162,8 @@ export class Program {
 
   @OneToMany(() => Donation, (donation) => donation.program)
   donations: Donation[];
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/dev

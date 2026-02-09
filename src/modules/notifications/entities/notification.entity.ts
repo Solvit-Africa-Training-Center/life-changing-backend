@@ -1,16 +1,20 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   JoinColumn,
-  ManyToOne 
+  ManyToOne,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { NotificationType, NotificationStatus, NotificationChannel } from '../../../config/constants';
+import {
+  NotificationType,
+  NotificationStatus,
+  NotificationChannel,
+} from '../../../config/constants';
 
 @Entity('notifications')
-export class Notification {
+export class Notif {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

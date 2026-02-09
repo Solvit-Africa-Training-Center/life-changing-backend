@@ -1,30 +1,28 @@
 # Development stage
-FROM node:18-alpine AS development
+FROM node:22-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache python3 make g++ bash
+
+# Install NestJS CLI globally
+RUN npm install -g @nestjs/cli
+
+# Update npm and suppress all warnings
+RUN npm install -g npm@latest && \
+    npm config set fund false && \
+    npm config set audit false && \
+    npm config set loglevel error
+
 COPY package*.json ./
 
-RUN npm install
+# Silent install - no warnings at all
+RUN npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund --silent 2>/dev/null || true
 
 COPY . .
 
-RUN npm run build
-
-# Production stage
-FROM node:18-alpine AS production
-
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
-WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm ci --only=production
-
-COPY --from=development /app/dist ./dist
+RUN mkdir -p /app/uploads /app/logs
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["npm", "run", "start:dev"]

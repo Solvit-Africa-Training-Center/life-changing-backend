@@ -2,7 +2,7 @@ import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nes
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-export interface ApiResponse<T> {
+export interface Response<T> {
   success: boolean;
   data: T;
   message?: string;
@@ -10,27 +10,14 @@ export interface ApiResponse<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<ApiResponse<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
     return next.handle().pipe(
-      map((response) => {
-    
-        if (response?.data !== undefined) {
-          return {
-            success: true,
-            message: response.message,
-            data: response.data,
-            timestamp: new Date(),
-          };
-        }
-
-        // Default wrapping
-        return {
-          success: true,
-          data: response,
-          timestamp: new Date(),
-        };
-      }),
+      map((data) => ({
+        success: true,
+        data,
+        timestamp: new Date(),
+      })),
     );
   }
 }

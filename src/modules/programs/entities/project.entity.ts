@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { 
   Entity, 
   PrimaryGeneratedColumn, 
@@ -7,6 +8,17 @@ import {
   UpdateDateColumn, 
   ManyToOne, 
   OneToMany 
+=======
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  JoinColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+>>>>>>> origin/dev
 } from 'typeorm';
 import { Program } from './program.entity';
 import { Donation } from '../../donations/entities/donation.entity';
@@ -89,4 +101,8 @@ export class Project {
   // Relations
   @OneToMany(() => Donation, (donation) => donation.project)
   donations: Donation[];
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/dev

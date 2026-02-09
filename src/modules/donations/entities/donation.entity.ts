@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { 
   Entity, 
   PrimaryGeneratedColumn, 
@@ -6,6 +7,16 @@ import {
   CreateDateColumn, 
   UpdateDateColumn, 
   ManyToOne 
+=======
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+>>>>>>> origin/dev
 } from 'typeorm';
 import { Donor } from './donor.entity';
 import { Project } from '../../programs/entities/project.entity';
@@ -107,4 +118,8 @@ export class Donation {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/dev

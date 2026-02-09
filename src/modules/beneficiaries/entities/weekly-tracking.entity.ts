@@ -1,14 +1,15 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
   JoinColumn,
-  CreateDateColumn, 
-  ManyToOne 
+  CreateDateColumn,
+  ManyToOne,
 } from 'typeorm';
 import { Beneficiary } from './beneficiary.entity';
-import { Staff } from '../../users/entities/staff.entity';
-import { AttendanceStatus, TaskStatus } from '../../../config/constants';
+import { Staff } from '../../admin/entities/staff.entity';
+import { AttendanceStatus, TaskStatus, UserType } from '../../../config/constants';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('weekly_trackings')
 export class WeeklyTracking {
@@ -71,9 +72,16 @@ export class WeeklyTracking {
     supportNeeded: string[];
   };
 
-  @ManyToOne(() => Staff, { nullable: true })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'submitted_by' })
-  submittedBy: Staff;
+  submittedBy: User;
+  
+  @Column({
+    name: 'submitted_by_type',
+    type: 'enum',
+    enum: UserType,
+  })
+  submittedByType: UserType;
 
   @Column({ name: 'is_offline_sync', default: false })
   isOfflineSync: boolean;

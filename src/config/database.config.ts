@@ -15,8 +15,8 @@ import { RecurringDonation } from '../modules/donations/entities/recurring-donat
 import { ImpactMetric } from '../modules/programs/entities/impact-metric.entity';
 import { Program } from '../modules/programs/entities/program.entity';
 import { Project } from '../modules/programs/entities/project.entity';
-import { Notification } from '../modules/notifications/entities/notification.entity';
-import { Staff } from '../modules/users/entities/staff.entity';
+import { Notif } from '../modules/notifications/entities/notification.entity';
+import { Staff } from '../modules/admin/entities/staff.entity';
 import { User } from '../modules/users/entities/user.entity';
 import { UssdSession } from '../modules/ussd/entities/ussd-session.entity';
 import { WebhookEvent } from '../modules/webhooks/entities/webhook-event.entity';
@@ -26,50 +26,54 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
   constructor(private configService: ConfigService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
+    
+    const isDocker = process.env.DOCKER === 'true';
+
     return {
       type: 'postgres',
-      host: this.configService.get('config.database.host'),
-      port: this.configService.get('config.database.port'),
+      host: isDocker ? 'postgres' : this.configService.get('config.database.host'),
+      port: isDocker ? 5432 : this.configService.get('config.database.port'),
       username: this.configService.get('config.database.username'),
       password: this.configService.get('config.database.password'),
       database: this.configService.get('config.database.database'),
-      
+
       entities: [
         // User Management
         User,
         Staff,
-        
+
         // Beneficiary Management
         Beneficiary,
         WeeklyTracking,
         Goal,
         BeneficiaryDocument,
         EmergencyContact,
-        
+
         // Donation Management
         Donor,
         Donation,
         RecurringDonation,
-        
+
         // Program Management
         Program,
         Project,
         ImpactMetric,
-        
+
         // Communication & Integration
         UssdSession,
-        Notification,
-        
+
+        Notif,
+
         // Content Management
         Story,
-        
+
         // System & Admin
         ActivityLog,
-        
+
         // Integration (Critical!)
         WebhookEvent,
       ],
-      
+
       synchronize: this.configService.get('config.database.synchronize'),
       logging: this.configService.get('config.database.logging'),
       migrations: ['dist/migrations/*.js'],
