@@ -1,0 +1,68 @@
+# Create new NestJS project
+npx @nestjs/cli new lceo-backend
+cd lceo-backend
+
+# Install core dependencies
+npm install @nestjs/config @nestjs/throttler @nestjs/cache-manager cache-manager
+npm install @nestjs/jwt @nestjs/passport passport passport-jwt bcrypt
+npm install @nestjs/typeorm typeorm pg
+npm install @nestjs/schedule @nestjs/bull bull bull-board
+npm install @nestjs/swagger swagger-ui-express
+npm install @nestjs/terminus @nestjs/platform-express
+npm install class-validator class-transformer
+npm install dotenv joi
+npm install helmet compression
+
+# Install external service SDKs
+npm install stripe @types/stripe
+npm install africastalking
+npm install @sendgrid/mail
+npm install cloudinary @types/cloudinary
+npm install axios
+npm install exceljs pdfkit
+
+# Install development dependencies
+npm install -D @types/node @types/bcrypt @types/passport-jwt
+npm install -D @types/express @types/multer
+npm install -D @types/cache-manager @types/bull
+npm install -D ts-node tsconfig-paths
+npm install -D jest @types/jest ts-jest supertest @types/supertest
+
+# Initialize TypeScript
+npx tsc --init
+
+=============================================================
+
+# 1. Start Docker services
+npm run docker:up
+
+# 2. Install dependencies
+npm install
+
+# 3. Create .env file from example
+cp .env.example .env
+# Edit .env with your actual values
+
+# 4. Run migrations
+npm run migration:run
+
+# 5. Seed initial data
+npm run seed
+
+# 6. Start development server
+npm run start:dev
+
+# The API will be available at http://localhost:3000
+# API Documentation at http://localhost:3000/api/docs
+
+
+===============================================================
+
+# Test health endpoint
+curl http://localhost:3000/api/v1/health
+
+# Test database connection
+curl http://localhost:3000/api/v1/health/db
+
+# Test API documentation
+open http://localhost:3000/api/docs
