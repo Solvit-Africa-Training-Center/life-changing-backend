@@ -10,11 +10,29 @@ import { CloudinaryService } from '../../shared/services/cloudinary.service';
 import { ProgramsController } from './controllers/programs.controller';
 import { ProjectsService } from './services/projects.service';
 import { ProjectsController } from './controllers/projects.controller';
+import { ProgramQueryService } from './services/program-query.service';
+import { ProgramMediaService } from './services/program-media.service';
+import { ProgramProjectService } from './services/program-project.service';
+import { ProgramCreationService } from './services/program-creation.service';
+import { ProgramUpdateService } from './services/program-update.service';
+import { ProgramStatsService } from './services/program-stats.service';
+import { ProgramDeletionService } from './services/program-deletion.service';
+
 
 @Module({
   imports: [TypeOrmModule.forFeature([Program, Project, ImpactMetric])],
   controllers: [ProgramsController, ProjectsController],
-  providers: [ProgramsService, ProjectsService, CloudinaryService],
+  providers: [
+    ProgramsService,
+    ProgramQueryService,
+    ProgramMediaService,
+    ProgramProjectService,
+    ProgramCreationService,
+    ProgramUpdateService,
+    ProgramStatsService,
+    ProgramDeletionService,
+    ProjectsService, 
+    CloudinaryService],
   exports: [ProgramsService, ProjectsService],
 })
-export class ProgramsModule {}
+export class ProgramsModule { }
