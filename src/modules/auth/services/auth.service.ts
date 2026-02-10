@@ -7,7 +7,7 @@ import {
 import * as bcrypt from 'bcrypt';
 
 import { User } from '../../users/entities/user.entity';
-import { UsersService } from '../../users/users.service';
+import { UsersService } from '../../users/services/users.service';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';

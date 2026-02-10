@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserType } from '../../config/constants';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UsersService } from './users.service';
+import { UsersService } from './services/users.service';
 import { DonorsService } from '../donations/services/donors.service';
 import { BeneficiariesService } from '../beneficiaries/services/beneficiaries.service';
 import { StaffService } from '../admin/services/staff.service';

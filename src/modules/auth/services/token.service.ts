@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import ms from 'ms';
 import { User } from '../../users/entities/user.entity';
 import { ActivityLogService } from '../../admin/activity-log.service';
-import { UsersService } from '../../users/users.service';
+import { UsersService } from '../../users/services/users.service';
 import { Tokens, JwtPayload } from '../interfaces/tokens.interface';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { TokenBlacklistService } from './token-blacklist.service';

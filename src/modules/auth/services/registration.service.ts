@@ -3,7 +3,7 @@ import { Injectable, ConflictException, ForbiddenException, BadRequestException 
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../users/entities/user.entity';
-import { UsersService } from '../../users/users.service';
+import { UsersService } from '../../users/services/users.service';
 import { Helpers } from '../../../shared/utils/helpers';
 import { NotificationService } from '../../notifications/services/notifications.service';
 import { ActivityLogService } from '../../admin/activity-log.service';
