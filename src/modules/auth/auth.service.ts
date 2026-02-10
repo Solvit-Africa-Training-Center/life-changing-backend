@@ -14,7 +14,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import ms from 'ms';
-// import { StringValue } from 'ms';
 
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';

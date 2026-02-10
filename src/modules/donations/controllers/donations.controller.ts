@@ -21,12 +21,10 @@ import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { DonationsService } from '../services/donations.service';
 import { CreateDonationDto } from '../dto/create-donation.dto';
-import { UpdateDonationDto } from '../dto/update-donation.dto';
 import { CreateRecurringDonationDto, UpdateRecurringDonationDto, CancelRecurringDonationDto } from '../dto/create-recurring-donation.dto';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
 import { DonationStatsDto, RecurringDonationStatsDto } from '../dto/donation-stats.dto';
 import { UserType, PaymentStatus, RecurringStatus } from '../../../config/constants';
-import { CurrentDonor } from '../../../common/decorators/current-donor.decorator';
 import { Donor } from '../entities/donor.entity';
 
 @ApiTags('donations')

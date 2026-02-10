@@ -204,4 +204,62 @@ export class NotificationsProcessor {
       }
     }
   }
+
+   @Process('donation-receipt-email')
+  async handleDonationReceiptEmail(job: Job) {
+    const { email, receiptData } = job.data;
+    try {
+      const success = await this.emailService.sendDonationReceipt(email, receiptData);
+      if (success) {
+        this.logger.log(`Donation receipt email sent to ${email}`);
+      } else {
+        this.logger.error(`Failed to send donation receipt email to ${email}`);
+        throw new Error('Email sending failed');
+      }
+    } catch (error) {
+      this.logger.error(`Error processing donation receipt email: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @Process('donation-receipt-sms')
+  async handleDonationReceiptSMS(job: Job) {
+    const { phone, message } = job.data;
+    try {
+      const success = await this.smsService.sendSMS(phone, message);
+      if (success) {
+        this.logger.log(`Donation receipt SMS sent to ${phone}`);
+      } else {
+        this.logger.error(`Failed to send donation receipt SMS to ${phone}`);
+        throw new Error('SMS sending failed');
+      }
+    } catch (error) {
+      this.logger.error(`Error processing donation receipt SMS: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @Process('recurring-donation-failed-email')
+  async handleRecurringDonationFailedEmail(job: Job) {
+    const { email, donorName, amount, currency, frequency, language } = job.data;
+    try {
+      const success = await this.emailService.sendRecurringDonationFailedEmail(
+        email,
+        donorName,
+        amount,
+        currency,
+        frequency,
+        language
+      );
+      if (success) {
+        this.logger.log(`Recurring donation failed email sent to ${email}`);
+      } else {
+        this.logger.error(`Failed to send recurring donation failed email to ${email}`);
+        throw new Error('Email sending failed');
+      }
+    } catch (error) {
+      this.logger.error(`Error processing recurring donation failed email: ${error.message}`);
+      throw error;
+    }
+  }
 }

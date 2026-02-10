@@ -1,4 +1,4 @@
-// src/modules/notifications/notifications.service.ts
+// src/modules/notifications/services/notifications.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +9,8 @@ import { InjectQueue } from '@nestjs/bull';
 import { SMSService } from './sms.service';
 import { Notif } from '../entities/notification.entity';
 import { NotificationType, NotificationStatus, NotificationChannel, Language } from '../../../config/constants';
+import { DonationReceiptData } from '../../donations/interfaces/donation-receipt.interface';
+
 
 @Injectable()
 export class NotificationService {
@@ -68,6 +70,12 @@ export class NotificationService {
       case NotificationType.PASSWORD_RESET:
         jobName = 'password-reset-notification';
         break;
+      case NotificationType.DONATION_RECEIPT:
+        jobName = 'donation-receipt-notification';
+        break;
+      case NotificationType.SYSTEM_ALERT:
+        jobName = 'system-alert-notification';
+        break;
       // Add more mappings as needed
     }
 
@@ -80,23 +88,10 @@ export class NotificationService {
     });
   }
 
+  // Email-related notification methods
   async sendEmailVerification(email: string, token: string): Promise<void> {
     await this.notificationsQueue.add('email-verification', {
       email,
-      token,
-      timestamp: new Date().toISOString(),
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 1000,
-      },
-    });
-  }
-
-  async sendSMSVerification(phone: string, token: string): Promise<void> {
-    await this.notificationsQueue.add('sms-verification', {
-      phone,
       token,
       timestamp: new Date().toISOString(),
     }, {
@@ -122,6 +117,60 @@ export class NotificationService {
     });
   }
 
+  async sendDonationReceiptEmail(email: string, receiptData: DonationReceiptData): Promise<void> {
+    await this.notificationsQueue.add('donation-receipt-email', {
+      email,
+      receiptData,
+      timestamp: new Date().toISOString(),
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
+      },
+    });
+  }
+
+  async sendRecurringDonationFailedEmail(
+    email: string,
+    donorName: string,
+    amount: number,
+    currency: string,
+    frequency: string,
+    language: Language = Language.EN
+  ): Promise<void> {
+    await this.notificationsQueue.add('recurring-donation-failed-email', {
+      email,
+      donorName,
+      amount,
+      currency,
+      frequency,
+      language,
+      timestamp: new Date().toISOString(),
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
+      },
+    });
+  }
+
+  // SMS-related notification methods
+  async sendSMSVerification(phone: string, token: string): Promise<void> {
+    await this.notificationsQueue.add('sms-verification', {
+      phone,
+      token,
+      timestamp: new Date().toISOString(),
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
+      },
+    });
+  }
+
   async sendPasswordResetSMS(phone: string, token: string): Promise<void> {
     await this.notificationsQueue.add('password-reset-sms', {
       phone,
@@ -136,6 +185,21 @@ export class NotificationService {
     });
   }
 
+  async sendDonationReceiptSMS(phone: string, message: string): Promise<void> {
+    await this.notificationsQueue.add('donation-receipt-sms', {
+      phone,
+      message,
+      timestamp: new Date().toISOString(),
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
+      },
+    });
+  }
+
+  // Pre-defined notification templates
   async sendWelcomeNotification(userId: string, userType: string, language: Language = Language.EN): Promise<Notif> {
     const title = {
       en: 'Welcome to LCEO!',
@@ -177,9 +241,6 @@ export class NotificationService {
       { language },
     );
   }
-
-  // In src/modules/notifications/notifications.service.ts
-  // Add these methods to your NotificationService class:
 
   async sendAccountActivatedNotification(
     userId: string,
@@ -230,6 +291,62 @@ export class NotificationService {
     );
   }
 
+  async sendDonationReceiptNotification(
+    userId: string,
+    donationId: string,
+    amount: number,
+    currency: string,
+    projectName: string,
+    language: Language = Language.EN
+  ): Promise<Notif> {
+    const title = {
+      en: 'Donation Confirmed',
+      rw: 'Ubushobozi bwa donation bwarahamijwe',
+    };
+
+    const message = {
+      en: `Thank you for your donation of ${amount} ${currency} to ${projectName}. Your support is changing lives!`,
+      rw: `Murakoze donation ya ${amount} ${currency} ku ${projectName}. Inkunga yawe irimo guhindura ubuzima!`,
+    };
+
+    return await this.createNotification(
+      userId,
+      NotificationType.DONATION_RECEIPT,
+      title,
+      message,
+      NotificationChannel.IN_APP,
+      { donationId, amount, currency, projectName, language },
+    );
+  }
+
+  async sendRecurringDonationFailureNotification(
+    userId: string,
+    amount: number,
+    currency: string,
+    frequency: string,
+    language: Language = Language.EN
+  ): Promise<Notif> {
+    const title = {
+      en: 'Payment Processing Issue',
+      rw: 'Ikibazo mu Kwishyura',
+    };
+
+    const message = {
+      en: `We couldn't process your recurring ${frequency} donation of ${amount} ${currency}. Please update your payment information.`,
+      rw: `Ntidushoboye gusohora donation yawe ya buri ${frequency} yoheje ${amount} ${currency}. Nyamuneka, hindura amakuru yawe yo kwishyura.`,
+    };
+
+    return await this.createNotification(
+      userId,
+      NotificationType.SYSTEM_ALERT,
+      title,
+      message,
+      NotificationChannel.IN_APP,
+      { amount, currency, frequency, language, type: 'recurring_donation_failed' },
+    );
+  }
+
+  // Notification status management
   async markNotificationAsSent(notificationId: string, deliveryReport?: any): Promise<void> {
     await this.notificationsRepository.update(notificationId, {
       status: NotificationStatus.SENT,
@@ -252,6 +369,7 @@ export class NotificationService {
     });
   }
 
+  // Notification retrieval
   async getUserNotifications(userId: string): Promise<Notif[]> {
     return await this.notificationsRepository.find({
       where: { user: { id: userId } },
@@ -259,6 +377,7 @@ export class NotificationService {
     });
   }
 
+  // Queue management
   async getQueueStats(): Promise<any> {
     const [waiting, active, completed, failed, delayed] = await Promise.all([
       this.notificationsQueue.getWaitingCount(),
