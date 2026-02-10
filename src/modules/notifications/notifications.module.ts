@@ -17,6 +17,11 @@ import { InAppNotificationService } from './services/in-app-notification.service
 import { NotificationStatusService } from './services/notification-status.service';
 import { NotificationQueryService } from './services/notification-query.service';
 
+import { EmailConfigService } from './services/email-config.service';
+import { SendGridService } from './services/sendgrid.service';
+import { EmailTemplateService } from './services/email-template.service';
+import { EmailDispatchService } from './services/email-dispatch.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Notif]),
@@ -34,6 +39,11 @@ import { NotificationQueryService } from './services/notification-query.service'
     InAppNotificationService,
     NotificationStatusService,
     NotificationQueryService,
+
+    EmailConfigService,
+    SendGridService,
+    EmailTemplateService,
+    EmailDispatchService,
 
     SMSService,
     EmailService,
