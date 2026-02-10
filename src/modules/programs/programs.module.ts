@@ -7,6 +7,7 @@ import { Project } from './entities/project.entity';
 import { ImpactMetric } from './entities/impact-metric.entity';
 
 import { CloudinaryService } from '../../shared/services/cloudinary.service';
+
 import { ProgramsController } from './controllers/programs.controller';
 import { ProjectsService } from './services/projects.service';
 import { ProjectsController } from './controllers/projects.controller';
@@ -17,6 +18,10 @@ import { ProgramCreationService } from './services/program-creation.service';
 import { ProgramUpdateService } from './services/program-update.service';
 import { ProgramStatsService } from './services/program-stats.service';
 import { ProgramDeletionService } from './services/program-deletion.service';
+import { ProjectValidationService } from './services/project-validation.service';
+import { ProjectMediaService } from './services/project-media.service';
+import { ProjectBudgetService } from './services/project-budget.service';
+import { ProjectQueryService } from './services/project-query.service';
 
 
 @Module({
@@ -24,6 +29,7 @@ import { ProgramDeletionService } from './services/program-deletion.service';
   controllers: [ProgramsController, ProjectsController],
   providers: [
     ProgramsService,
+
     ProgramQueryService,
     ProgramMediaService,
     ProgramProjectService,
@@ -31,7 +37,13 @@ import { ProgramDeletionService } from './services/program-deletion.service';
     ProgramUpdateService,
     ProgramStatsService,
     ProgramDeletionService,
-    ProjectsService, 
+
+    ProjectsService,
+
+    ProjectValidationService,
+    ProjectMediaService,
+    ProjectBudgetService,
+    ProjectQueryService,
     CloudinaryService],
   exports: [ProgramsService, ProjectsService],
 })
