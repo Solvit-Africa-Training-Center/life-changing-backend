@@ -105,7 +105,7 @@ export class ContentController {
               'Only image and video files are allowed',
             ),
             false,
-          );
+          )
         }
 
         // Image max = 100MB
@@ -115,7 +115,7 @@ export class ContentController {
               'Image size must not exceed 50MB',
             ),
             false,
-          );
+          )
         }
 
         cb(null, true);
