@@ -1,7 +1,5 @@
 // src/modules/notifications/services/notifications.service.ts
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 
 import { Notif } from '../entities/notification.entity';
 import { NotificationType, NotificationChannel, Language } from '../../../config/constants';
@@ -19,8 +17,6 @@ import { NotificationQueryService } from './notification-query.service';
 @Injectable()
 export class NotificationService {
   constructor(
-    @InjectRepository(Notif)
-    private notificationsRepository: Repository<Notif>,
     private notificationFactory: NotificationFactoryService,
     private emailNotificationService: EmailNotificationService,
     private smsNotificationService: SMSNotificationService,
