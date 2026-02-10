@@ -22,6 +22,12 @@ import { EmergencyContact } from './entities/emergency-contact.entity';
 import { User } from '../users/entities/user.entity';
 import { Program } from '../programs/entities/program.entity';
 import { Staff } from '../admin/entities/staff.entity';
+import { BeneficiaryRegistrationService } from './services/beneficiary-registration.service';
+import { BeneficiaryProgramService } from './services/beneficiary-program.service';
+import { BeneficiaryQueryService } from './services/beneficiary-query.service';
+import { BeneficiarySearchService } from './services/beneficiary-search.service';
+import { BeneficiaryStatsService } from './services/beneficiary-stats.service';
+import { BeneficiaryManagementService } from './services/beneficiary-management.service';
 // import { UssdController } from '../ussd/ussd.controller';
 
 @Module({
@@ -50,6 +56,14 @@ import { Staff } from '../admin/entities/staff.entity';
   ],
   providers: [
     BeneficiariesService,
+
+    BeneficiaryRegistrationService,
+    BeneficiaryProgramService,
+    BeneficiaryQueryService,
+    BeneficiarySearchService,
+    BeneficiaryStatsService,
+    BeneficiaryManagementService,
+
     WeeklyTrackingService,
     BeneficiaryDocumentsService,
     GoalsService,
