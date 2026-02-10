@@ -11,7 +11,7 @@ import { Donor } from '../donations/entities/donor.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
 import { ActivityLogService } from '../admin/activity-log.service';
 import { NotificationService } from '../notifications/services/notifications.service';
-import { TokenBlacklistService } from '../auth/token-blacklist.service';
+import { TokenBlacklistService } from '../auth/services/token-blacklist.service';
 
 @Injectable()
 export class UsersService extends BaseService<User> {

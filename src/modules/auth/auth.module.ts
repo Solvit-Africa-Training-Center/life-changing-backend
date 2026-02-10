@@ -5,7 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -17,16 +17,21 @@ import { Staff } from '../admin/entities/staff.entity';
 import { Beneficiary } from '../beneficiaries/entities/beneficiary.entity';
 import { Helpers } from '../../shared/utils/helpers';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { TokenBlacklistService } from './token-blacklist.service';
+import { TokenBlacklistService } from './services/token-blacklist.service';
 import { ActivityLog } from '../admin/entities/activity-log.entity';
 import { ActivityLogService } from '../admin/activity-log.service';
+import { LoginService } from './services/login.service';
+import { TokenService } from './services/token.service';
+import { PasswordService } from './services/password.service';
+import { VerificationService } from './services/verification.service';
+import { RegistrationService } from './services/registration.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Donor, Staff, Beneficiary,ActivityLog]),
+    TypeOrmModule.forFeature([User, Donor, Staff, Beneficiary, ActivityLog]),
     forwardRef(() => UsersModule),
     PassportModule,
-    NotificationsModule, 
+    NotificationsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -41,13 +46,19 @@ import { ActivityLogService } from '../admin/activity-log.service';
   controllers: [AuthController],
   providers: [
     AuthService,
+    LoginService,
+    RegistrationService,
+    TokenService,
+    PasswordService,
+    VerificationService,
     JwtStrategy,
     RefreshTokenStrategy,
     LocalStrategy,
     Helpers,
     TokenBlacklistService,
-    ActivityLogService
+    ActivityLogService,
+
   ],
   exports: [AuthService, JwtModule, TokenBlacklistService],
 })
-export class AuthModule {}
+export class AuthModule { }

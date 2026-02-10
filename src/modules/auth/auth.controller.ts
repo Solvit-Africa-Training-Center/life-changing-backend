@@ -2,7 +2,7 @@
   import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
   import { AuthGuard } from '@nestjs/passport';
 
-  import { AuthService } from './auth.service';
+  import { AuthService } from './services/auth.service';
   import { LoginDto } from './dto/login.dto';
   import { RegisterDto } from './dto/register.dto';
   import { RefreshTokenDto } from './dto/refresh-token.dto';
