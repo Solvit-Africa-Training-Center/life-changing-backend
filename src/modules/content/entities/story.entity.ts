@@ -8,7 +8,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { Program } from '../../programs/entities/program.entity';
-import { Language, AuthorRole } from '../../../config/constants';
+import { Language, UserType } from '../../../config/constants';
 
 @Entity('stories')
 export class Story {
@@ -33,12 +33,9 @@ export class Story {
   @Column({
     name: 'author_role',
     type: 'enum',
-    enum: AuthorRole,
+    enum: UserType,
   })
-  authorRole: AuthorRole;
-
-  @Column({ name: 'author_photo', nullable: true })
-  authorPhoto: string;
+  authorRole: UserType;
 
   @ManyToOne(() => Program, { nullable: true })
   @JoinColumn({ name: 'program_id' })
