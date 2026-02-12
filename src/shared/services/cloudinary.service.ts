@@ -160,6 +160,46 @@ export class CloudinaryService {
   }
 
 
+  // ================= STORY METHODS =================
+async uploadStoryMedia(
+  storyId: string,
+  file: Express.Multer.File,
+  mediaType: 'image' | 'video',
+): Promise<UploadResult> {
+  const folder = `stories/${storyId}/${mediaType}`;
+  
+  const options: CloudinaryUploadOptions = {
+    resourceType: mediaType === 'video' ? 'video' : 'image',
+    useFilename: true,
+    uniqueFilename: true,
+    filenameOverride: file.originalname,
+  };
+
+  // Generate thumbnail for videos
+  if (mediaType === 'video') {
+    options.transformation = [
+      { width: 500, crop: 'scale' },
+      { quality: 'auto' }
+    ];
+  }
+
+  return this.uploadFileWithOptions(folder, file, options);
+}
+
+async uploadStoryThumbnail(
+  storyId: string,
+  file: Express.Multer.File,
+): Promise<UploadResult> {
+  const folder = `stories/${storyId}/thumbnail`;
+  return this.uploadFile(folder, file);
+}
+
+async deleteStoryMedia(storyId: string): Promise<void> {
+  const folder = `stories/${storyId}`;
+  await this.deleteFolder(folder);
+}
+
+
   // ================= DOCUMENT METHODS =================
   /**
    * Upload a document (supports PDF, DOC, DOCX, XLS, XLSX, images, etc.)
