@@ -59,10 +59,10 @@ export class BeneficiaryDocument {
 
   @ManyToOne(() => Staff, { nullable: true })
   @JoinColumn({ name: 'verified_by' })
-  verifiedBy: Staff;
+  verifiedBy: Staff | null;
 
   @Column({ name: 'verified_at', type: 'timestamp', nullable: true })
-  verifiedAt: Date;
+  verifiedAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

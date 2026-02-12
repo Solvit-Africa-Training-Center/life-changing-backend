@@ -28,6 +28,13 @@ import { BeneficiaryQueryService } from './services/beneficiary-query.service';
 import { BeneficiarySearchService } from './services/beneficiary-search.service';
 import { BeneficiaryStatsService } from './services/beneficiary-stats.service';
 import { BeneficiaryManagementService } from './services/beneficiary-management.service';
+
+import { DocumentValidationService } from './services/document-validation.service';
+import { DocumentUploadService } from './services/document-upload.service';
+import { DocumentVerificationService } from './services/document-verification.service';
+import { DocumentDeletionService } from './services/document-deletion.service';
+import { DocumentQueryService } from './services/document-query.service';
+import { DocumentMimeTypeService } from './services/document-mimetype.service';
 // import { UssdController } from '../ussd/ussd.controller';
 
 @Module({
@@ -65,7 +72,16 @@ import { BeneficiaryManagementService } from './services/beneficiary-management.
     BeneficiaryManagementService,
 
     WeeklyTrackingService,
+
     BeneficiaryDocumentsService,
+    DocumentValidationService,
+    DocumentUploadService,
+    DocumentVerificationService,
+    DocumentDeletionService,
+    DocumentQueryService,
+    DocumentMimeTypeService,
+
+
     GoalsService,
     EmergencyContactsService,
   ],
@@ -77,4 +93,4 @@ import { BeneficiaryManagementService } from './services/beneficiary-management.
     EmergencyContactsService,
   ],
 })
-export class BeneficiariesModule {}
+export class BeneficiariesModule { }

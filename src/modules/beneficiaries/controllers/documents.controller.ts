@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -12,93 +13,226 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   HttpStatus,
   HttpCode,
+  BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiBearerAuth, 
+  ApiConsumes, 
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { BeneficiaryDocumentsService } from '../services/beneficiary-documents.service';
-import { UploadDocumentDto, VerifyDocumentDto } from '../dto/upload-document.dto';
+import { 
+  UploadDocumentDto, 
+  VerifyDocumentDto, 
+  UploadMultipleDocumentsDto,
+  DocumentFilterDto,
+} from '../dto/upload-document.dto';
 import { DocumentType, UserType } from '../../../config/constants';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
 
-@ApiTags('beneficiaries')
+@ApiTags('beneficiary-documents')
 @Controller('beneficiaries/documents')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class DocumentsController {
   constructor(private readonly documentsService: BeneficiaryDocumentsService) {}
 
+  // ================= SINGLE DOCUMENT UPLOAD =================
   @Post('upload')
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Upload document (beneficiary or admin)' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+      fileFilter: (req, file, cb) => {
+        const allowedMimes = [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+        if (!allowedMimes.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              `File type ${file.mimetype} not allowed. Allowed types: JPEG, PNG, WebP, PDF, DOC, DOCX`
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @ApiOperation({ summary: 'Upload a single document (beneficiary or admin)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Document file (max 20MB)',
+        },
+        documentType: {
+          type: 'string',
+          enum: Object.values(DocumentType),
+          example: 'id_card',
+        },
+        notes: {
+          type: 'string',
+          description: 'Optional notes about the document',
+        },
+      },
+      required: ['file', 'documentType'],
+    },
+  })
   async uploadDocument(
     @Req() req,
     @Body() uploadDocumentDto: UploadDocumentDto,
-    @UploadedFile() file?: Express.Multer.File
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    // Get beneficiary ID from token (for beneficiary) or request
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
     const beneficiary = await this.getBeneficiaryFromRequest(req);
-    
     return this.documentsService.uploadDocument(
       beneficiary.id,
       uploadDocumentDto,
       req.user.id,
       req.user.userType as UserType,
-      file
+      file,
     );
   }
 
+  // ================= MULTIPLE DOCUMENTS UPLOAD =================
+  @Post('upload/multiple')
+  @Roles(UserType.ADMIN)
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: { fileSize: 20 * 1024 * 1024 }, // 20MB per file
+      fileFilter: (req, file, cb) => {
+        const allowedMimes = [
+          'image/jpeg',
+          'image/png',
+          'application/pdf',
+        ];
+        if (!allowedMimes.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              `File type ${file.mimetype} not allowed for bulk upload`
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @ApiOperation({ summary: 'Upload multiple documents at once (admin only)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+        documentType: {
+          type: 'string',
+          enum: Object.values(DocumentType),
+          example: 'supporting_document',
+        },
+        beneficiaryId: {
+          type: 'string',
+          description: 'Required for admin uploads',
+        },
+      },
+      required: ['files', 'documentType', 'beneficiaryId'],
+    },
+  })
+  async uploadMultipleDocuments(
+    @Req() req,
+    @Body() body: UploadMultipleDocumentsDto & { beneficiaryId?: string },
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files uploaded');
+    }
+
+    let beneficiaryId: string;
+
+    if (req.user.userType === UserType.ADMIN && body.beneficiaryId) {
+      beneficiaryId = body.beneficiaryId;
+    } else {
+      const beneficiary = await this.getBeneficiaryFromRequest(req);
+      beneficiaryId = beneficiary.id;
+    }
+
+    const documents = await this.documentsService.uploadMultipleDocuments(
+      beneficiaryId,
+      files,
+      body.documentType,
+      req.user.id,
+      req.user.userType as UserType,
+    );
+
+    return {
+      message: `Successfully uploaded ${documents.length} document(s)`,
+      documents,
+    };
+  }
+
+  // ================= GET DOCUMENTS =================
   @Get()
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
-  @ApiOperation({ summary: 'Get beneficiary documents' })
-  @ApiQuery({ name: 'page', required: false })
-  @ApiQuery({ name: 'limit', required: false })
+  @ApiOperation({ summary: 'Get beneficiary documents with filters' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'documentType', required: false, enum: DocumentType })
+  @ApiQuery({ name: 'verified', required: false, type: Boolean })
+  @ApiQuery({ name: 'search', required: false, type: String })
   async getDocuments(
     @Req() req,
-    @Query() paginationParams: PaginationParams
+    @Query() paginationParams: PaginationParams,
+    @Query() filter: DocumentFilterDto,
   ) {
     const beneficiary = await this.getBeneficiaryFromRequest(req);
-    return this.documentsService.getBeneficiaryDocuments(beneficiary.id, paginationParams);
+    return this.documentsService.getBeneficiaryDocuments(
+      beneficiary.id,
+      paginationParams,
+      filter,
+    );
   }
 
-  @Get('type/:documentType')
+  // ================= GET DOCUMENT BY ID =================
+  @Get(':id')
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
-  @ApiOperation({ summary: 'Get documents by type' })
-  async getDocumentsByType(
+  @ApiOperation({ summary: 'Get document by ID' })
+  async getDocumentById(
     @Req() req,
-    @Param('documentType') documentType: DocumentType,
-    @Query() paginationParams: PaginationParams
+    @Param('id') id: string,
   ) {
     const beneficiary = await this.getBeneficiaryFromRequest(req);
-    return this.documentsService.getDocumentsByType(beneficiary.id, documentType, paginationParams);
+    return this.documentsService.validateDocumentBelongsToBeneficiary(id, beneficiary.id);
   }
 
-  @Put(':id/verify')
-  @Roles(UserType.ADMIN)
-  @ApiOperation({ summary: 'Verify document (admin only)' })
-  async verifyDocument(
-    @Param('id') id: string,
-    @Body() verifyDto: VerifyDocumentDto,
-    @Req() req
-  ) {
-    return this.documentsService.verifyDocument(id, req.user.id, verifyDto);
-  }
-
-  @Delete(':id')
-  @Roles(UserType.BENEFICIARY, UserType.ADMIN)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete document' })
-  async deleteDocument(@Param('id') id: string) {
-    await this.documentsService.deleteDocument(id);
-  }
-
-  @Get('stats')
+  // ================= GET DOCUMENT STATISTICS =================
+  @Get('stats/summary')
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
   @ApiOperation({ summary: 'Get document statistics' })
   async getDocumentStats(@Req() req) {
@@ -106,272 +240,98 @@ export class DocumentsController {
     return this.documentsService.getDocumentStats(beneficiary.id);
   }
 
-  private async getBeneficiaryFromRequest(req: any) {
-    // If admin is accessing, they should provide beneficiaryId in query
+  // ================= GET RECENT DOCUMENTS =================
+  @Get('recent/list')
+  @Roles(UserType.BENEFICIARY, UserType.ADMIN)
+  @ApiOperation({ summary: 'Get recent documents' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getRecentDocuments(
+    @Req() req,
+    @Query('limit') limit?: number,
+  ) {
+    const beneficiary = await this.getBeneficiaryFromRequest(req);
+    return this.documentsService.getRecentDocuments(beneficiary.id, limit);
+  }
+
+  // ================= VERIFY DOCUMENT =================
+  @Patch(':id/verify')
+  @Roles(UserType.ADMIN)
+  @ApiOperation({ summary: 'Verify document (admin only)' })
+  async verifyDocument(
+    @Param('id') id: string,
+    @Body() verifyDto: VerifyDocumentDto,
+    @Req() req,
+  ) {
+    return this.documentsService.verifyDocument(id, req.user.id, verifyDto);
+  }
+
+  // ================= UNVERIFY DOCUMENT =================
+  @Patch(':id/unverify')
+  @Roles(UserType.ADMIN)
+  @ApiOperation({ summary: 'Unverify document (admin only)' })
+  async unverifyDocument(@Param('id') id: string) {
+    return this.documentsService.unverifyDocument(id);
+  }
+
+  // ================= BULK VERIFY DOCUMENTS =================
+  @Post('verify/bulk')
+  @Roles(UserType.ADMIN)
+  @ApiOperation({ summary: 'Bulk verify documents (admin only)' })
+  async bulkVerifyDocuments(
+    @Body() body: { documentIds: string[] },
+    @Req() req,
+  ) {
+    const count = await this.documentsService.bulkVerifyDocuments(
+      body.documentIds,
+      req.user.id,
+    );
+    return { message: `Successfully verified ${count} document(s)` };
+  }
+
+  // ================= DELETE DOCUMENT =================
+  @Delete(':id')
+  @Roles(UserType.BENEFICIARY, UserType.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a single document' })
+  async deleteDocument(@Param('id') id: string) {
+    await this.documentsService.deleteDocument(id);
+  }
+
+  // ================= BULK DELETE DOCUMENTS =================
+  @Delete('bulk/delete')
+  @Roles(UserType.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Bulk delete documents (admin only)' })
+  async deleteMultipleDocuments(@Body() body: { documentIds: string[] }) {
+    const count = await this.documentsService.deleteMultipleDocuments(body.documentIds);
+    return { message: `Successfully deleted ${count} document(s)` };
+  }
+
+  // ================= DELETE ALL BENEFICIARY DOCUMENTS =================
+  @Delete('beneficiary/all')
+  @Roles(UserType.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete all documents for a beneficiary (admin only)' })
+  async deleteAllBeneficiaryDocuments(@Query('beneficiaryId') beneficiaryId: string) {
+    const count = await this.documentsService.deleteAllBeneficiaryDocuments(beneficiaryId);
+    return { message: `Successfully deleted ${count} document(s)` };
+  }
+
+  // ================= HELPER METHOD =================
+  private async getBeneficiaryFromRequest(req: any): Promise<any> {
     if (req.user.userType === UserType.ADMIN && req.query.beneficiaryId) {
-      // Logic to get beneficiary by ID
+      const beneficiary = await this.documentsService.validateBeneficiary(
+        req.query.beneficiaryId,
+      );
+      return beneficiary;
     }
-    
-    // For beneficiary users, get their own beneficiary profile
-    const beneficiaryService = req.app.get('BeneficiariesService');
-    return beneficiaryService.findBeneficiaryByUserId(req.user.id);
+
+    if (req.user.userType === UserType.BENEFICIARY) {
+      // Get beneficiary service from app context
+      const beneficiariesService = req.app.get('BeneficiariesService');
+      return beneficiariesService.findBeneficiaryByUserId(req.user.id);
+    }
+
+    throw new BadRequestException('Unable to determine beneficiary');
   }
 }
-
-// src/modules/beneficiaries/controllers/documents.controller.ts
-// import {
-//   Controller,
-//   Get,
-//   Post,
-//   Put,
-//   Delete,
-//   Body,
-//   Param,
-//   Query,
-//   UseGuards,
-//   Req,
-//   UseInterceptors,
-//   UploadedFile,
-//   UploadedFiles,
-//   HttpStatus,
-//   HttpCode,
-//   BadRequestException,
-// } from '@nestjs/common';
-// import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-// import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiQuery, ApiBody } from '@nestjs/swagger';
-// import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-// import { RolesGuard } from '../../../common/guards/roles.guard';
-// import { Roles } from '../../../common/decorators/roles.decorator';
-// import { BeneficiariesService } from '../services/beneficiaries.service';
-// import { BeneficiaryDocumentsService } from '../services/beneficiary-documents.service';
-// import { UploadDocumentDto, VerifyDocumentDto } from '../dto/upload-document.dto';
-// import { DocumentType, UserType } from '../../../config/constants';
-// import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
-
-// @ApiTags('beneficiaries')
-// @Controller('beneficiaries/documents')
-// @UseGuards(JwtAuthGuard, RolesGuard)
-// @ApiBearerAuth()
-// export class DocumentsController {
-//   constructor(
-//     private readonly documentsService: BeneficiaryDocumentsService,
-//     private readonly beneficiariesService: BeneficiariesService,
-//   ) {}
-
-//   @Post('upload')
-//   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
-//   @ApiConsumes('multipart/form-data')
-//   @UseInterceptors(FilesInterceptor('files', 5, {
-//     limits: {
-//       fileSize: 50 * 1024 * 1024, // 50MB per file
-//     },
-//     fileFilter: (req, file, cb) => {
-//       const isImage = file.mimetype.startsWith('image/');
-//       const isPdf = file.mimetype === 'application/pdf';
-//       const allowedDocs = [
-//         'application/msword',
-//         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-//       ];
-
-//       if (!isImage && !isPdf && !allowedDocs.includes(file.mimetype)) {
-//         return cb(
-//           new BadRequestException(
-//             'Only image, PDF, and Word documents are allowed'
-//           ),
-//           false,
-//         );
-//       }
-
-//       // Image max = 10MB
-//       if (isImage && file.size > 10 * 1024 * 1024) {
-//         return cb(
-//           new BadRequestException('Image size must not exceed 10MB'),
-//           false,
-//         );
-//       }
-
-//       // PDF max = 50MB
-//       if (isPdf && file.size > 50 * 1024 * 1024) {
-//         return cb(
-//           new BadRequestException('PDF size must not exceed 50MB'),
-//           false,
-//         );
-//       }
-
-//       // Word docs max = 50MB
-//       if (allowedDocs.includes(file.mimetype) && file.size > 50 * 1024 * 1024) {
-//         return cb(
-//           new BadRequestException('Document size must not exceed 50MB'),
-//           false,
-//         );
-//       }
-
-//       cb(null, true);
-//     },
-//   }))
-//   @ApiOperation({ summary: 'Upload multiple documents (beneficiary or admin)' })
-//   @ApiBody({
-//     schema: {
-//       type: 'object',
-//       properties: {
-//         files: {
-//           type: 'array',
-//           items: {
-//             type: 'string',
-//             format: 'binary',
-//           },
-//           description: 'Document files (max 5 files, 10MB images, 50MB PDF/Word)'
-//         },
-//         documentType: {
-//           type: 'string',
-//           enum: Object.values(DocumentType),
-//           example: DocumentType.ID_CARD,
-//           description: 'Type of document'
-//         },
-//         description: {
-//           type: 'string',
-//           description: 'Optional description of the document',
-//           required: false
-//         },
-//         beneficiaryId: {
-//           type: 'string',
-//           description: 'Beneficiary ID (required for admin, optional for beneficiary)',
-//           required: false
-//         },
-//       },
-//       required: ['files', 'documentType']
-//     },
-//   })
-//   async uploadDocument(
-//     @Req() req,
-//     @Body() uploadDocumentDto: UploadDocumentDto,
-//     @UploadedFiles() files: Express.Multer.File[]
-//   ) {
-//     if (!files || files.length === 0) {
-//       throw new BadRequestException('No files uploaded');
-//     }
-
-//     // Get beneficiary ID
-//     let beneficiaryId = uploadDocumentDto.beneficiaryId;
-    
-//     if (req.user.userType === UserType.BENEFICIARY && !beneficiaryId) {
-//       // Get beneficiary's own ID
-//       const beneficiary = await this.beneficiariesService.findBeneficiaryByUserId(req.user.id);
-//       if (!beneficiary) {
-//         throw new BadRequestException('Beneficiary profile not found');
-//       }
-//       beneficiaryId = beneficiary.id;
-//     }
-
-//     if (!beneficiaryId) {
-//       throw new BadRequestException('Beneficiary ID is required');
-//     }
-
-//     // Upload multiple files
-//     const results = [];
-//     for (const file of files) {
-//       const result = await this.documentsService.uploadDocument(
-//         beneficiaryId,
-//         {
-//           ...uploadDocumentDto,
-//           documentType: uploadDocumentDto.documentType,
-//           description: uploadDocumentDto.description,
-//         },
-//         req.user.id,
-//         req.user.userType as UserType,
-//         file
-//       );
-//       results.push(result);
-//     }
-
-//     return {
-//       message: `Successfully uploaded ${files.length} document(s)`,
-//       documents: results.map(r => ({
-//         id: r.id,
-//         documentType: r.documentType,
-//         status: r.status,
-//         url: r.fileUrl,
-//       })),
-//     };
-//   }
-
-//   @Get()
-//   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
-//   @ApiOperation({ summary: 'Get beneficiary documents' })
-//   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-//   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
-//   @ApiQuery({ name: 'beneficiaryId', required: false, type: String, description: 'Beneficiary ID (admin only)' })
-//   async getDocuments(
-//     @Req() req,
-//     @Query() paginationParams: PaginationParams,
-//     @Query('beneficiaryId') beneficiaryId?: string,
-//   ) {
-//     const targetBeneficiaryId = await this.resolveBeneficiaryId(req, beneficiaryId);
-//     return this.documentsService.getBeneficiaryDocuments(targetBeneficiaryId, paginationParams);
-//   }
-
-//   @Get('type/:documentType')
-//   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
-//   @ApiOperation({ summary: 'Get documents by type' })
-//   @ApiQuery({ name: 'page', required: false })
-//   @ApiQuery({ name: 'limit', required: false })
-//   @ApiQuery({ name: 'beneficiaryId', required: false, type: String, description: 'Beneficiary ID (admin only)' })
-//   async getDocumentsByType(
-//     @Req() req,
-//     @Param('documentType') documentType: DocumentType,
-//     @Query() paginationParams: PaginationParams,
-//     @Query('beneficiaryId') beneficiaryId?: string,
-//   ) {
-//     const targetBeneficiaryId = await this.resolveBeneficiaryId(req, beneficiaryId);
-//     return this.documentsService.getDocumentsByType(targetBeneficiaryId, documentType, paginationParams);
-//   }
-
-//   @Put(':id/verify')
-//   @Roles(UserType.ADMIN)
-//   @ApiOperation({ summary: 'Verify document (admin only)' })
-//   async verifyDocument(
-//     @Param('id') id: string,
-//     @Body() verifyDto: VerifyDocumentDto,
-//     @Req() req
-//   ) {
-//     return this.documentsService.verifyDocument(id, req.user.id, verifyDto);
-//   }
-
-//   @Delete(':id')
-//   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
-//   @HttpCode(HttpStatus.NO_CONTENT)
-//   @ApiOperation({ summary: 'Delete document' })
-//   async deleteDocument(@Param('id') id: string) {
-//     await this.documentsService.deleteDocument(id);
-//   }
-
-//   @Get('stats')
-//   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
-//   @ApiOperation({ summary: 'Get document statistics' })
-//   @ApiQuery({ name: 'beneficiaryId', required: false, type: String, description: 'Beneficiary ID (admin only)' })
-//   async getDocumentStats(
-//     @Req() req,
-//     @Query('beneficiaryId') beneficiaryId?: string,
-//   ) {
-//     const targetBeneficiaryId = await this.resolveBeneficiaryId(req, beneficiaryId);
-//     return this.documentsService.getDocumentStats(targetBeneficiaryId);
-//   }
-
-//   private async resolveBeneficiaryId(req: any, beneficiaryId?: string): Promise<string> {
-//     // If admin provides beneficiaryId, use it
-//     if (req.user.userType === UserType.ADMIN && beneficiaryId) {
-//       return beneficiaryId;
-//     }
-    
-//     // For beneficiary users, get their own beneficiary profile
-//     if (req.user.userType === UserType.BENEFICIARY) {
-//       const beneficiary = await this.beneficiariesService.findBeneficiaryByUserId(req.user.id);
-//       if (!beneficiary) {
-//         throw new BadRequestException('Beneficiary profile not found');
-//       }
-//       return beneficiary.id;
-//     }
-    
-//     throw new BadRequestException('Beneficiary ID is required');
-//   }
-// }
