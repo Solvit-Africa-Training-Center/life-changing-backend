@@ -9,7 +9,6 @@ import { ImpactMetric } from './entities/impact-metric.entity';
 import { CloudinaryService } from '../../shared/services/cloudinary.service';
 
 import { ProgramsController } from './controllers/programs.controller';
-import { ProjectsService } from './services/projects.service';
 import { ProjectsController } from './controllers/projects.controller';
 import { ProgramQueryService } from './services/program-query.service';
 import { ProgramMediaService } from './services/program-media.service';
@@ -18,6 +17,10 @@ import { ProgramCreationService } from './services/program-creation.service';
 import { ProgramUpdateService } from './services/program-update.service';
 import { ProgramStatsService } from './services/program-stats.service';
 import { ProgramDeletionService } from './services/program-deletion.service';
+import { ProjectsService } from './services/projects.service';
+import { ProjectCreationService } from './services/project-creation.service';
+import { ProjectUpdateService } from './services/project-update.service';
+import { ProjectDeletionService } from './services/project-deletion.service';
 import { ProjectValidationService } from './services/project-validation.service';
 import { ProjectMediaService } from './services/project-media.service';
 import { ProjectBudgetService } from './services/project-budget.service';
@@ -38,8 +41,12 @@ import { ProjectQueryService } from './services/project-query.service';
     ProgramStatsService,
     ProgramDeletionService,
 
-    ProjectsService,
+  
 
+    ProjectsService,
+    ProjectCreationService,
+    ProjectUpdateService,
+    ProjectDeletionService,
     ProjectValidationService,
     ProjectMediaService,
     ProjectBudgetService,

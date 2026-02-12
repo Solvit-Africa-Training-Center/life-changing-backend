@@ -15,8 +15,8 @@ import { DonationStatsDto, RecurringDonationStatsDto } from '../dto/donation-sta
 import { plainToInstance } from 'class-transformer';
 import { DonorsService } from './donors.service';
 import { CreateRecurringDonationDto, UpdateRecurringDonationDto } from '../dto/create-recurring-donation.dto';
-import { NotificationService } from 'src/modules/notifications/services/notifications.service';
-import { DonationReceiptData } from 'src/modules/donations/interfaces/donation-receipt.interface';
+import { NotificationService } from '../../notifications/services/notifications.service';
+import { DonationReceiptData } from '../../donations/interfaces/donation-receipt.interface';
 
 @Injectable()
 export class DonationsService extends BaseService<Donation> {

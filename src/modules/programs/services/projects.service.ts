@@ -7,6 +7,11 @@ import { ProjectValidationService } from './project-validation.service';
 import { ProjectMediaService } from './project-media.service';
 import { ProjectBudgetService } from './project-budget.service';
 import { ProjectQueryService } from './project-query.service';
+import { ProjectCreationService } from './project-creation.service';
+import { ProjectUpdateService } from './project-update.service';
+import { ProjectDeletionService } from './project-deletion.service';
+import { CreateProjectDTO } from '../dto/create-project.dto';
+import { UpdateProjectDTO } from '../dto/update-project.dto';
 
 
 @Injectable()
@@ -17,8 +22,38 @@ export class ProjectsService {
     private readonly mediaService: ProjectMediaService,
     private readonly budgetService: ProjectBudgetService,
     private readonly queryService: ProjectQueryService,
+    private readonly creationService: ProjectCreationService,
+    private readonly updateService: ProjectUpdateService,
+    private readonly deletionService: ProjectDeletionService,
 
   ) { }
+
+   // ================= CREATE PROJECT =================
+  async createProject(
+    programId: string,
+    dto: CreateProjectDTO,
+    coverImage?: Express.Multer.File,
+  ): Promise<Project> {
+    return this.creationService.createProject(programId, dto, coverImage);
+  }
+
+  // ================= UPDATE PROJECT =================
+  async updateProject(
+    programId: string,
+    projectId: string,
+    dto: UpdateProjectDTO,
+  ): Promise<Project> {
+    return this.updateService.updateProject(programId, projectId, dto);
+  }
+
+  // ================= DELETE PROJECT =================
+  async deleteProject(
+    programId: string,
+    projectId: string,
+  ): Promise<void> {
+    return this.deletionService.deleteProject(programId, projectId);
+  }
+
   // ================= PROJECT COVER IMAGE (delegated) =================
   async uploadProjectCover(
     programId: string,

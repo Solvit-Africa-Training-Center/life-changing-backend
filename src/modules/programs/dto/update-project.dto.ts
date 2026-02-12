@@ -1,23 +1,27 @@
-// src/modules/programs/dto/update-program.dto.ts
+// src/modules/programs/dto/update-project.dto.ts
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateProgramDTO } from './create-program.dto';
+import { CreateProjectDTO } from './create-project.dto';
 import { Transform, Type } from 'class-transformer';
 import { 
   IsOptional, 
   ValidateNested, 
-  IsArray, 
   IsNumber, 
-  IsObject, 
-  IsDateString, 
-  IsEnum 
+  IsObject,
+  IsArray,
+  IsString
 } from 'class-validator';
-import { NameDto, DescriptionDto, ProjectDto } from './create-program.dto';
-import { ProgramCategory, ProgramStatus } from '../../../config/constants';
+import { 
+  ProjectNameDto, 
+  ProjectDescriptionDto, 
+  ProjectTimelineDto, 
+  ProjectLocationDto, 
+  ImpactMetricsDto 
+} from './create-project.dto';
 
-export class UpdateProgramDTO extends PartialType(CreateProgramDTO) {
+export class UpdateProjectDTO extends PartialType(CreateProjectDTO) {
   @IsOptional()
   @ValidateNested()
-  @Type(() => NameDto)
+  @Type(() => ProjectNameDto)
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       try {
@@ -28,11 +32,11 @@ export class UpdateProgramDTO extends PartialType(CreateProgramDTO) {
     }
     return value;
   })
-  name?: NameDto;
+  name?: ProjectNameDto;
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => DescriptionDto)
+  @Type(() => ProjectDescriptionDto)
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       try {
@@ -43,51 +47,7 @@ export class UpdateProgramDTO extends PartialType(CreateProgramDTO) {
     }
     return value;
   })
-  description?: DescriptionDto;
-
-  @IsOptional()
-  @IsEnum(ProgramCategory)
-  category?: ProgramCategory;
-
-  @IsOptional()
-  @IsArray()
-  @IsNumber({}, { each: true })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch {
-        if (value.includes(',')) {
-          return value.split(',').map(Number);
-        }
-        return [Number(value)];
-      }
-    }
-    return value;
-  })
-  sdgAlignment?: number[];
-
-  @IsOptional()
-  @IsObject()
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch {
-        return value;
-      }
-    }
-    return value;
-  })
-  kpiTargets?: Record<string, any>;
-
-  @IsOptional()
-  @IsDateString()
-  startDate?: string;
-
-  @IsOptional()
-  @IsDateString()
-  endDate?: string;
+  description?: ProjectDescriptionDto;
 
   @IsOptional()
   @IsNumber()
@@ -97,25 +57,50 @@ export class UpdateProgramDTO extends PartialType(CreateProgramDTO) {
     }
     return value;
   })
-  budget?: number;
+  budgetRequired?: number;
 
   @IsOptional()
-  @IsEnum(ProgramStatus)
-  status?: ProgramStatus;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ProjectDto)
+  @ValidateNested()
+  @Type(() => ProjectTimelineDto)
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       try {
         return JSON.parse(value);
       } catch {
-        return [];
+        return value;
       }
     }
     return value;
   })
-  projects?: ProjectDto[];
+  timeline?: ProjectTimelineDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ProjectLocationDto)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
+  location?: ProjectLocationDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ImpactMetricsDto)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
+  impactMetrics?: ImpactMetricsDto;
 }

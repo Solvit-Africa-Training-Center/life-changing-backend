@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 import { Notif } from '../entities/notification.entity';
-import { NotificationStatus, NotificationType } from 'src/config/constants';
+import { NotificationStatus, NotificationType } from '../../../config/constants';
 
 @Injectable()
 export class NotificationQueryService {

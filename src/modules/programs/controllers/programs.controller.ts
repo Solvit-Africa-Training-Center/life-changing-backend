@@ -85,27 +85,12 @@ export class ProgramsController {
       { name: 'coverImage', maxCount: 1 },
       { name: 'logo', maxCount: 1 },
     ], {
-      limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB max per file
-      },
+      limits: { fileSize: 10 * 1024 * 1024 },
       fileFilter: (req, file, cb) => {
-        const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
         if (!allowedMimes.includes(file.mimetype)) {
-          return cb(
-            new BadRequestException(
-              `File type ${file.mimetype} not allowed. Allowed types: JPEG, PNG, WebP, SVG`
-            ),
-            false,
-          );
+          return cb(new BadRequestException(`File type ${file.mimetype} not allowed`), false);
         }
-        // Check file size (already handled by limits, but double-check)
-        if (file.size > 10 * 1024 * 1024) {
-          return cb(
-            new BadRequestException('File size must not exceed 10MB'),
-            false,
-          );
-        }
-
         cb(null, true);
       },
     }),
@@ -115,38 +100,18 @@ export class ProgramsController {
     schema: {
       type: 'object',
       properties: {
-        name: {
-          type: 'object',
-          properties: {
-            en: { type: 'string', example: 'Women Entrepreneurship Program' },
-            rw: { type: 'string', example: 'Porogaramu yubucuruzi bwabagore' }
-          }
-        },
-        description: {
-          type: 'object',
-          properties: {
-            en: { type: 'string', example: 'Empowering women through business training' },
-            rw: { type: 'string', example: 'Gutera imbaraga abagore binyuze mu biganiro byubucuruzi' }
-          }
-        },
+        name: { type: 'string', example: '{"en":"Women Entrepreneurship Program","rw":"Porogaramu yubucuruzi bwabagore"}' },
+        description: { type: 'string', example: '{"en":"Empowering women through business training","rw":"Gutera imbaraga abagore"}' },
         category: { type: 'string', example: 'entrepreneurship' },
-        sdgAlignment: { type: 'array', items: { type: 'number' }, example: [1, 5, 8] },
-        kpiTargets: { type: 'object', example: { beneficiaries: 100, capitalGrowth: 50 } },
-        startDate: { type: 'string', format: 'date', example: '2024-01-01' },
-        endDate: { type: 'string', format: 'date', example: '2024-12-31' },
+        sdgAlignment: { type: 'string', example: '[1,5,8]' }, // Changed to string in Swagger
+        kpiTargets: { type: 'string', example: '{"beneficiaries":100,"capitalGrowth":50}' }, // Changed to string
+        startDate: { type: 'string', format: 'date', example: '2026-03-01' },
+        endDate: { type: 'string', format: 'date', example: '2026-12-31' },
         budget: { type: 'number', example: 50000000 },
         status: { type: 'string', example: 'active' },
-        projects: { type: 'array', items: { type: 'object' }},
-        coverImage: {
-          type: 'string',
-          format: 'binary',
-          description: 'Program cover image (max 10MB, JPEG/PNG/WebP/SVG)'
-        },
-        logo: {
-          type: 'string',
-          format: 'binary',
-          description: 'Program logo (max 10MB, JPEG/PNG/WebP/SVG)'
-        },
+        projects: { type: 'string', example: '[]' }, // Changed to string
+        coverImage: { type: 'string', format: 'binary' },
+        logo: { type: 'string', format: 'binary' },
       },
       required: ['name', 'description', 'category', 'sdgAlignment', 'kpiTargets', 'startDate', 'budget']
     },
@@ -154,12 +119,12 @@ export class ProgramsController {
   @ApiOperation({ summary: 'Create a new program (admin only)' })
   async createProgram(
     @Body() data: CreateProgramDTO,
-    @UploadedFiles()
-    files: {
+    @UploadedFiles() files: {
       coverImage?: Express.Multer.File[];
       logo?: Express.Multer.File[];
     },
   ) {
+
     return this.programsService.createProgram(
       data,
       files?.coverImage?.[0],
@@ -167,7 +132,7 @@ export class ProgramsController {
     );
   }
 
- @Patch(':id')
+  @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserType.ADMIN)
   @ApiBearerAuth()
@@ -177,28 +142,12 @@ export class ProgramsController {
       { name: 'coverImage', maxCount: 1 },
       { name: 'logo', maxCount: 1 },
     ], {
-      limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB max per file
-      },
+      limits: { fileSize: 10 * 1024 * 1024 },
       fileFilter: (req, file, cb) => {
         const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-        
         if (!allowedMimes.includes(file.mimetype)) {
-          return cb(
-            new BadRequestException(
-              `File type ${file.mimetype} not allowed. Allowed types: JPEG, PNG, WebP, SVG`
-            ),
-            false,
-          );
+          return cb(new BadRequestException(`File type ${file.mimetype} not allowed`), false);
         }
-
-        if (file.size > 10 * 1024 * 1024) {
-          return cb(
-            new BadRequestException('File size must not exceed 10MB'),
-            false,
-          );
-        }
-
         cb(null, true);
       },
     }),
@@ -208,37 +157,18 @@ export class ProgramsController {
     schema: {
       type: 'object',
       properties: {
-        name: {
-          type: 'object',
-          properties: {
-            en: { type: 'string', example: 'Updated Program Name' },
-            rw: { type: 'string', example: 'Porogaramu yihariye' }
-          },
-        },
-        description: {
-          type: 'object',
-          properties: {
-            en: { type: 'string', example: 'Updated description' },
-            rw: { type: 'string', example: 'Ibisobanuro byahinduwe' }
-          },
-        },
-        category: { type: 'string', example: 'entrepreneurship'},
-        sdgAlignment: { type: 'array', items: { type: 'number' }, example: [1, 5, 8]},
-        kpiTargets: { type: 'object', example: { beneficiaries: 150 }},
-        startDate: { type: 'string', format: 'date', example: '2024-01-01'},
+        name: { type: 'string', example: '{"en":"Updated Program Name","rw":"Porogaramu yihariye"}' },
+        description: { type: 'string', example: '{"en":"Updated description","rw":"Ibisobanuro byahinduwe"}' },
+        category: { type: 'string', example: 'entrepreneurship' },
+        sdgAlignment: { type: 'string', example: '[1,5,8]' },
+        kpiTargets: { type: 'string', example: '{"beneficiaries":150}' },
+        startDate: { type: 'string', format: 'date', example: '2024-01-01' },
         endDate: { type: 'string', format: 'date', example: '2024-12-31' },
         budget: { type: 'number', example: 60000000 },
         status: { type: 'string', example: 'active' },
-        coverImage: {
-          type: 'string',
-          format: 'binary',
-          description: 'New cover image (max 10MB, JPEG/PNG/WebP/SVG)',
-        },
-        logo: {
-          type: 'string',
-          format: 'binary',
-          description: 'New logo (max 10MB, JPEG/PNG/WebP/SVG)',
-        },
+        projects: { type: 'string', example: '[]' },
+        coverImage: { type: 'string', format: 'binary' },
+        logo: { type: 'string', format: 'binary' },
       }
     },
   })
@@ -283,7 +213,7 @@ export class ProgramsController {
     },
     fileFilter: (req, file, cb) => {
       const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-      
+
       if (!allowedMimes.includes(file.mimetype)) {
         return cb(
           new BadRequestException(
@@ -334,7 +264,7 @@ export class ProgramsController {
     },
     fileFilter: (req, file, cb) => {
       const allowedMimes = ['image/jpeg', 'image/png', 'image/svg+xml'];
-      
+
       if (!allowedMimes.includes(file.mimetype)) {
         return cb(
           new BadRequestException(

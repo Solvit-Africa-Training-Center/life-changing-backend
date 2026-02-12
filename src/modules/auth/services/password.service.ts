@@ -31,7 +31,17 @@ export class PasswordService {
     }
 
     const identifier = this.getIdentifier(email, phone);
-    const user = await this.usersService.findByEmailOrPhone(identifier);
+    // const user = await this.usersService.findByEmailOrPhone(identifier);
+    // FIX 1: Try to find user by email first, then by phone
+    let user: User | null = null;
+    
+    if (email) {
+      user = await this.usersService.findByEmail(email);
+    }
+    
+    if (!user && phone) {
+      user = await this.usersService.findByPhone(phone);
+    }
 
     if (!user) {
       return { message: 'If an account exists, a reset link will be sent' };
@@ -115,10 +125,15 @@ export class PasswordService {
 
   private async sendPasswordReset(user: User, token: string): Promise<void> {
     try {
-      if (user.email) {
+       if (user.email) {
         await this.notificationService.sendPasswordResetEmail(user.email, token);
-      } else if (user.phone) {
+        console.log(`📧 Password reset email queued for ${user.email}`);
+      }
+      
+      // Send SMS if user has phone - ALWAYS send this too!
+      if (user.phone) {
         await this.notificationService.sendPasswordResetSMS(user.phone, token);
+        console.log(`📱 Password reset SMS queued for ${user.phone}`);
       }
     } catch (error) {
       console.error('Failed to queue password reset:', error);

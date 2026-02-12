@@ -7,7 +7,7 @@ import { ActivityLogService } from '../../admin/activity-log.service';
 import { LoginDto } from '../dto/login.dto';
 import { LoginResponse } from '../interfaces/auth-response.interface';
 import { UserType } from '../../../config/constants';
-import { Staff } from 'src/modules/admin/entities/staff.entity';
+import { Staff } from '../../admin/entities/staff.entity';
 import { TokenService } from './token.service';
 
 @Injectable()

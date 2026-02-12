@@ -1,7 +1,7 @@
 // src/modules/notifications/services/email.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Language } from 'src/config/constants';
+import { Language } from '../../../config/constants';
 import { DonationReceiptData } from '../interfaces/donation-receipt.interface';
 import { EmailConfigService } from './email-config.service';
 import { SendGridService } from './sendgrid.service';

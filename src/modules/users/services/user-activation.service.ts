@@ -7,7 +7,7 @@ import { ActivateUserDto } from '../dto/activate-user.dto';
 import { ActivityLogService } from '../../admin/activity-log.service';
 import { NotificationService } from '../../notifications/services/notifications.service';
 import { TokenBlacklistService } from '../../auth/services/token-blacklist.service';
-import { Language } from 'src/config/constants';
+import { Language } from '../../../config/constants';
 
 @Injectable()
 export class UserActivationService {

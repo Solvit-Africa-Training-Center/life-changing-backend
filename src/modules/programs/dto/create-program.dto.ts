@@ -1,255 +1,274 @@
-// import { ApiPropertyOptional } from '@nestjs/swagger';
-// import { BadRequestException } from '@nestjs/common';
-// import {
-//   IsString,
-//   IsOptional,
-//   IsEnum,
-//   IsNumber,
-//   IsDateString,
-//   IsObject,
-//   IsArray,
-//   ValidateNested,
-//   Allow,
-// } from 'class-validator';
-// import { Type, Transform } from 'class-transformer';
-
-// import { ProgramCategory, ProgramStatus } from '../../../config/constants';
-// import { CreateProjectDTO } from './create-project.dto';
-
-// /* ---------------------------------- */
-// /* Localized Text DTO */
-// /* ---------------------------------- */
-// export class LocalizedTextDTO {
-//   @Allow()
-//   @IsString()
-//   en: string;
-
-//   @Allow()
-//   @IsString()
-//   rw: string;
-// }
-
-// /* ---------------------------------- */
-// /* SAFE JSON PARSER (Swagger + multipart safe) */
-// /* ---------------------------------- */
-// const parseJson = ({ value }) => {
-//   if (value === undefined || value === null || value === '') {
-//     return undefined;
-//   }
-
-//   // Already parsed
-//   if (typeof value === 'object') {
-//     return value;
-//   }
-
-//   if (typeof value === 'string') {
-//     const trimmed = value.trim();
-
-//     // Handle: "4,8,10"
-//     if (/^\d+(,\d+)*$/.test(trimmed)) {
-//       return trimmed.split(',').map(Number);
-//     }
-
-//     try {
-//       return JSON.parse(trimmed);
-//     } catch {
-//       throw new BadRequestException(`Invalid JSON format. Received: ${value}`);
-//     }
-//   }
-
-//   return value;
-// };
-
-// /* ---------------------------------- */
-// /* Create Program DTO */
-// /* ---------------------------------- */
-// export class CreateProgramDTO {
-//   @Allow()
-//   @Transform(parseJson)
-//   @ValidateNested()
-//   @Type(() => LocalizedTextDTO)
-//   name: LocalizedTextDTO;
-
-//   @Allow()
-//   @Transform(parseJson)
-//   @ValidateNested()
-//   @Type(() => LocalizedTextDTO)
-//   description: LocalizedTextDTO;
-
-//   @IsEnum(ProgramCategory)
-//   category: ProgramCategory;
-
-//   @Allow()
-//   @Transform(parseJson)
-//   @IsArray()
-//   @IsNumber({}, { each: true })
-//   sdgAlignment: number[];
-
-//   @Allow()
-//   @Transform(parseJson)
-//   @IsObject()
-//   kpiTargets: Record<string, any>;
-
-//   @IsDateString()
-//   startDate: string;
-
-//   @Allow()
-//   @Transform(({ value }) => {
-//     if (!value || value === '') return undefined;
-//     return value;
-//   })
-//   endDate?: string;
-
-//   @Type(() => Number)
-//   @IsNumber()
-//   budget: number;
-
-//   @IsOptional()
-//   @Type(() => Number)
-//   fundsAllocated?: number;
-
-//   @IsOptional()
-//   @Type(() => Number)
-//   fundsUtilized?: number;
-
-//   /* -------- Files (multipart) -------- */
-//   @Allow()
-//   @ApiPropertyOptional({ type: 'string', format: 'binary' })
-//   coverImage?: any;
-
-//   @Allow()
-//   @ApiPropertyOptional({ type: 'string', format: 'binary' })
-//   logo?: any;
-
-//   @IsOptional()
-//   @Type(() => Number)
-//   sortOrder?: number;
-
-//   @Allow()
-//   @Transform(parseJson)
-//   metadata?: Record<string, any>;
-
-//   @IsOptional()
-//   @IsEnum(ProgramStatus)
-//   status?: ProgramStatus;
-
-//   @Allow()
-//   @Transform(parseJson)
-//   @IsArray()
-//   @ValidateNested({ each: true })
-//   @Type(() => CreateProjectDTO)
-//   projects?: CreateProjectDTO[];
-// }
-
-
 // src/modules/programs/dto/create-program.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsArray, IsNumber, IsDateString, IsOptional, IsObject, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { 
+  IsString, IsEnum, IsArray, IsNumber, IsDateString, 
+  IsOptional, IsObject, ValidateNested, IsNotEmpty 
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ProgramCategory, ProgramStatus } from '../../../config/constants';
 
-class NameDto {
+// ALL nested classes MUST be exported!
+export class NameDto {
   @ApiProperty({ example: 'Women Entrepreneurship Program' })
   @IsString()
+  @IsNotEmpty()
   en: string;
 
   @ApiProperty({ example: 'Porogaramu yubucuruzi bwabagore' })
   @IsString()
+  @IsNotEmpty()
   rw: string;
 }
 
-class DescriptionDto {
+export class DescriptionDto {
   @ApiProperty({ example: 'Empowering women through business training' })
   @IsString()
+  @IsNotEmpty()
   en: string;
 
   @ApiProperty({ example: 'Gutera imbaraga abagore binyuze mu biganiro byubucuruzi' })
   @IsString()
+  @IsNotEmpty()
   rw: string;
 }
 
-class ProjectDto {
-  @ApiProperty({ type: NameDto })
+export class MilestoneDto {
+  @ApiProperty({ example: '2026-03-31' })
+  @IsString()
+  date: string;
+
+  @ApiProperty({ example: 'Planning Phase completed' })
+  @IsString()
+  description: string;
+}
+
+export class TimelineDto {
+  @ApiProperty({ example: '2026-03-01' })
+  @IsString()
+  start: string;
+
+  @ApiProperty({ example: '2026-12-31' })
+  @IsString()
+  end: string;
+
+  @ApiProperty({ 
+    type: [MilestoneDto], 
+    required: false,
+    example: [
+      { date: '2026-03-31', description: 'Planning Phase completed' },
+      { date: '2026-06-30', description: 'Implementation started' }
+    ]
+  })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => MilestoneDto)
+  milestones?: MilestoneDto[];
+}
+
+export class LocationDto {
+  @ApiProperty({ example: ['Kicukiro', 'Gasabo'] })
+  @IsArray()
+  @IsString({ each: true })
+  districts: string[];
+
+  @ApiProperty({ example: ['Gikondo', 'Niboyi'] })
+  @IsArray()
+  @IsString({ each: true })
+  sectors: string[];
+}
+
+export class ProjectDto {
+  @ApiProperty({ type: () => NameDto })
   @ValidateNested()
   @Type(() => NameDto)
+  @IsNotEmpty()
   name: NameDto;
 
-  @ApiProperty({ type: DescriptionDto })
+  @ApiProperty({ type: () => DescriptionDto })
   @ValidateNested()
   @Type(() => DescriptionDto)
+  @IsNotEmpty()
   description: DescriptionDto;
 
   @ApiProperty({ example: 10000000 })
   @IsNumber()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return parseFloat(value);
+    }
+    return value;
+  })
   budgetRequired: number;
 
-  @ApiProperty({ 
-    example: { 
-      start: '2024-01-01', 
-      end: '2024-12-31',
-      milestones: [
-        { name: 'Planning Phase', date: '2024-01-31' },
-        { name: 'Implementation', date: '2024-06-30' }
-      ]
-    } 
-  })
-  @IsObject()
-  timeline: any;
+  @ApiProperty({ type: () => TimelineDto })
+  @ValidateNested()
+  @Type(() => TimelineDto)
+  @IsNotEmpty()
+  timeline: TimelineDto;
 
-  @ApiProperty({ 
-    example: { 
-      districts: ['Kicukiro', 'Gasabo'], 
-      sectors: ['Gikondo', 'Niboyi'] 
-    } 
-  })
-  @IsObject()
-  location: any;
+  @ApiProperty({ type: () => LocationDto })
+  @ValidateNested()
+  @Type(() => LocationDto)
+  @IsNotEmpty()
+  location: LocationDto;
 }
 
 export class CreateProgramDTO {
-  @ApiProperty({ type: NameDto })
+  @ApiProperty({ 
+    type: () => NameDto,
+    description: 'Program name in English and Kinyarwanda',
+    example: { en: 'Women Entrepreneurship Program', rw: 'Porogaramu yubucuruzi bwabagore' }
+  })
   @ValidateNested()
   @Type(() => NameDto)
+  @IsNotEmpty()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
   name: NameDto;
 
-  @ApiProperty({ type: DescriptionDto })
+  @ApiProperty({ 
+    type: () => DescriptionDto,
+    description: 'Program description in English and Kinyarwanda',
+    example: { en: 'Empowering women through business training', rw: 'Gutera imbaraga abagore' }
+  })
   @ValidateNested()
   @Type(() => DescriptionDto)
+  @IsNotEmpty()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
   description: DescriptionDto;
 
-  @ApiProperty({ enum: ProgramCategory, example: ProgramCategory.ENTREPRENEURSHIP })
+  // ✅ ADD THIS - Category field
+  @ApiProperty({ 
+    enum: ProgramCategory, 
+    example: 'entrepreneurship',
+    description: 'Program category'
+  })
   @IsEnum(ProgramCategory)
+  @IsNotEmpty()
   category: ProgramCategory;
 
-  @ApiProperty({ example: [1, 5, 8] })
+  @ApiProperty({ 
+    type: [Number],
+    example: [1, 5, 8],
+    description: 'Array of SDG alignment numbers (1-17)'
+  })
   @IsArray()
+  @IsNumber({}, { each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        // Handle comma-separated values
+        if (value.includes(',')) {
+          return value.split(',').map(Number);
+        }
+        return [Number(value)];
+      }
+    }
+    return value;
+  })
   sdgAlignment: number[];
 
-  @ApiProperty({ example: { beneficiaries: 100, capitalGrowth: 50 } })
+  @ApiProperty({ 
+    type: Object,
+    example: { beneficiaries: 100, capitalGrowth: 50 },
+    description: 'Key Performance Indicator targets',
+    additionalProperties: true
+  })
   @IsObject()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
   kpiTargets: Record<string, any>;
 
-  @ApiProperty({ example: '2024-01-01' })
+  // ✅ ADD THIS - Start Date field
+  @ApiProperty({ 
+    example: '2026-03-01',
+    description: 'Program start date (ISO format)'
+  })
   @IsDateString()
+  @IsNotEmpty()
   startDate: string;
 
-  @ApiProperty({ example: '2024-12-31', required: false })
+  // ✅ ADD THIS - End Date field (optional)
+  @ApiProperty({ 
+    example: '2026-12-31', 
+    required: false,
+    description: 'Program end date (ISO format)'
+  })
   @IsOptional()
   @IsDateString()
   endDate?: string;
 
-  @ApiProperty({ example: 50000000 })
+  // ✅ ADD THIS - Budget field
+  @ApiProperty({ 
+    example: 50000000,
+    description: 'Total program budget in RWF'
+  })
   @IsNumber()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return parseFloat(value);
+    }
+    return value;
+  })
   budget: number;
 
-  @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.ACTIVE, required: false })
+  // ✅ ADD THIS - Status field (optional)
+  @ApiProperty({ 
+    enum: ProgramStatus, 
+    example: 'active', 
+    required: false,
+    description: 'Program status'
+  })
   @IsOptional()
   @IsEnum(ProgramStatus)
   status?: ProgramStatus;
 
-  @ApiProperty({ type: [ProjectDto], required: false })
+  @ApiProperty({ 
+    type: [ProjectDto], 
+    required: false,
+    default: [],
+    description: 'Array of projects under this program'
+  })
   @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProjectDto)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+    return value;
+  })
   projects?: ProjectDto[];
 }

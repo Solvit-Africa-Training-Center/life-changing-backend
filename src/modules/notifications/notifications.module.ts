@@ -21,6 +21,7 @@ import { EmailConfigService } from './services/email-config.service';
 import { SendGridService } from './services/sendgrid.service';
 import { EmailTemplateService } from './services/email-template.service';
 import { EmailDispatchService } from './services/email-dispatch.service';
+import { SMSTestController } from './sms-test.controller';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { EmailDispatchService } from './services/email-dispatch.service';
       name: 'notifications',
     }),
   ],
-  controllers: [NotificationsController],
+  controllers: [NotificationsController, SMSTestController],
   providers: [
     NotificationService,
 
