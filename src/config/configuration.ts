@@ -51,19 +51,6 @@ export default registerAs('config', () => ({
     callbackUrl: process.env.PAYPACK_CALLBACK_URL,
   },
 
-  mobileMoney: {
-    mtn: {
-      apiKey: process.env.MTN_MOMO_API_KEY,
-      userId: process.env.MTN_MOMO_USER_ID,
-      primaryKey: process.env.MTN_MOMO_PRIMARY_KEY,
-    },
-    airtel: {
-      apiKey: process.env.AIRTEL_MONEY_API_KEY,
-      clientId: process.env.AIRTEL_MONEY_CLIENT_ID,
-      clientSecret: process.env.AIRTEL_MONEY_CLIENT_SECRET,
-    },
-  },
-
   // Africa's Talking
   africasTalking: {
     apiKey: process.env.AFRICAS_TALKING_API_KEY,
