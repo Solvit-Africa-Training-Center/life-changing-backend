@@ -13,6 +13,7 @@ import {
   ForbiddenException,
   NotFoundException,
   HttpCode,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -26,11 +27,13 @@ import { UserType } from '../../../config/constants';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
 import { Beneficiary } from '../entities/beneficiary.entity';
 import type { AuthUser } from 'src/modules/auth/interfaces/auth-user.interface';
+import { BeneficiaryServiceInterceptor } from 'src/common/interceptors/beneficiary-service.interceptor';
 
 @ApiTags('beneficiaries')
 @Controller('beneficiaries/tracking')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
+@UseInterceptors(BeneficiaryServiceInterceptor)
 export class TrackingController {
   constructor(private readonly trackingService: WeeklyTrackingService) {}
 

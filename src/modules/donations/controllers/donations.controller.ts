@@ -14,6 +14,7 @@ import {
   HttpStatus,
   NotFoundException,
   BadRequestException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -26,22 +27,28 @@ import type { PaginationParams } from '../../../shared/interfaces/pagination.int
 import { DonationStatsDto, RecurringDonationStatsDto } from '../dto/donation-stats.dto';
 import { UserType, PaymentStatus, RecurringStatus } from '../../../config/constants';
 import { Donor } from '../entities/donor.entity';
+import { DonorServiceInterceptor } from 'src/common/interceptors/donor-service.interceptor';
+import { CurrentDonor } from 'src/common/decorators/current-donor.decorator';
 
 @ApiTags('donations')
 @Controller('donations')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(DonorServiceInterceptor)
 export class DonationsController {
-  constructor(private readonly donationsService: DonationsService) {}
+  constructor(private readonly donationsService: DonationsService) { }
 
   @Post()
   @Roles(UserType.DONOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Make a donation' })
   @ApiResponse({ status: 201, description: 'Donation processed successfully' })
-  async createDonation(@Req() req, @Body() createDonationDto: CreateDonationDto) {
+  async createDonation(
+    @CurrentDonor() donor: Donor,
+    @Req() req,
+    @Body() createDonationDto: CreateDonationDto) {
     const processDonationDto = {
       ...createDonationDto,
-      donorId: req.user.donorId || req.user.id, // Assuming user has donorId
+      donorId: donor.id,
     };
 
     // Get metadata from request
@@ -65,9 +72,11 @@ export class DonationsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a recurring donation' })
   @ApiResponse({ status: 201, description: 'Recurring donation created' })
-  async createRecurringDonation(@Req() req, @Body() createRecurringDonationDto: CreateRecurringDonationDto) {
+  async createRecurringDonation(
+    @CurrentDonor() donor: Donor,
+    @Body() createRecurringDonationDto: CreateRecurringDonationDto) {
     return this.donationsService.createRecurringDonation(
-      req.user.donorId || req.user.id,
+      donor.id,
       createRecurringDonationDto
     );
   }
@@ -89,11 +98,11 @@ export class DonationsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my donations' })
   async getMyDonations(
-    @Req() req,
+    @CurrentDonor() donor: Donor,
     @Query() paginationParams: PaginationParams,
   ) {
     return this.donationsService.getDonationsByDonor(
-      req.user.donorId || req.user.id,
+      donor.id,
       paginationParams
     );
   }
@@ -103,11 +112,11 @@ export class DonationsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my recurring donations' })
   async getMyRecurringDonations(
-    @Req() req,
+    @CurrentDonor() donor: Donor,
     @Query() paginationParams: PaginationParams,
   ) {
     return this.donationsService.getRecurringDonationsByDonor(
-      req.user.donorId || req.user.id,
+      donor.id,
       paginationParams
     );
   }
@@ -179,17 +188,17 @@ export class DonationsController {
   @Roles(UserType.DONOR, UserType.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get donation by ID' })
-  async getDonation(@Param('id') id: string, @Req() req) {
+  async getDonation(@Param('id') id: string, @CurrentDonor() donor: Donor, @Req() req) {
     const donation = await this.donationsService.findOne(id, ['donor', 'project', 'program']);
-    
+
     if (!donation) {
       throw new NotFoundException('Donation not found');
     }
 
     // Check permission
     const isAdmin = req.user.userType === UserType.ADMIN;
-    const isOwner = donation.donor.user?.id === req.user.id;
-    
+    const isOwner = donation.donor?.id === donor.id;
+
     if (!isAdmin && !isOwner) {
       throw new BadRequestException('Not authorized to view this donation');
     }
@@ -204,9 +213,9 @@ export class DonationsController {
   async updateRecurringDonation(
     @Param('id') id: string,
     @Body() updateDto: UpdateRecurringDonationDto,
-    @Req() req,
+    @CurrentDonor() donor: Donor,
   ) {
-    // Verify ownership (in a real app, you'd add this check)
+    // await this.checkRecurringDonationOwnership(id, donor.id);
     return this.donationsService.updateRecurringDonation(id, updateDto);
   }
 
@@ -238,4 +247,17 @@ export class DonationsController {
   async deleteDonation(@Param('id') id: string) {
     await this.donationsService.delete(id);
   }
+
+  // Add this private method to your controller
+  // private async checkRecurringDonationOwnership(recurringId: string, donorId: string): Promise<void> {
+  //   const recurring = await this.donationsService.findRecurringDonation(recurringId);
+
+  //   if (!recurring) {
+  //     throw new NotFoundException('Recurring donation not found');
+  //   }
+
+  //   if (recurring.donor.id !== donorId) {
+  //     throw new BadRequestException('Not authorized to modify this recurring donation');
+  //   }
+  // }
 }
