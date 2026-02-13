@@ -12,8 +12,9 @@ import {
   HttpCode,
   ForbiddenException,
   NotFoundException,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -24,15 +25,18 @@ import { GoalType, GoalStatus, UserType } from '../../../config/constants';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
 import { Beneficiary } from '../entities/beneficiary.entity';
 import { Goal } from '../entities/goal.entity';
+import { BeneficiaryServiceInterceptor } from 'src/common/interceptors/beneficiary-service.interceptor';
+import { UpdateProgressDto } from '../dto/update-progress.dto';
 
 @ApiTags('beneficiaries')
 @Controller('beneficiaries/goals')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
+@UseInterceptors(BeneficiaryServiceInterceptor)
 export class GoalsController {
   constructor(
     private readonly goalsService: GoalsService,
-  ) {}
+  ) { }
 
   @Post()
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
@@ -81,13 +85,14 @@ export class GoalsController {
   @Put(':id/progress')
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
   @ApiOperation({ summary: 'Update goal progress' })
+  @ApiBody({ type: UpdateProgressDto })
   async updateGoalProgress(
     @Param('id') id: string,
-    @Body() body: { progress: number },
+    @Body() updateProgressDto: UpdateProgressDto,
     @CurrentBeneficiary() beneficiary: Beneficiary
   ) {
     await this.checkGoalOwnership(id, beneficiary.id);
-    return this.goalsService.updateGoalProgress(id, body.progress);
+    return this.goalsService.updateGoalProgress(id, updateProgressDto.progress);
   }
 
   @Get('stats')
@@ -100,6 +105,7 @@ export class GoalsController {
   @Put(':id')
   @Roles(UserType.BENEFICIARY, UserType.ADMIN)
   @ApiOperation({ summary: 'Update goal' })
+  @ApiBody({ type: UpdateGoalDto })
   async updateGoal(
     @Param('id') id: string,
     @Body() updateGoalDto: UpdateGoalDto,
@@ -134,11 +140,11 @@ export class GoalsController {
 
   private async checkGoalOwnership(goalId: string, beneficiaryId: string): Promise<void> {
     const goal = await this.goalsService.findOne(goalId, ['beneficiary']);
-    
+
     if (!goal) {
       throw new NotFoundException('Goal not found');
     }
-    
+
     if (goal.beneficiary.id !== beneficiaryId) {
       throw new ForbiddenException('You do not have permission to access this goal');
     }

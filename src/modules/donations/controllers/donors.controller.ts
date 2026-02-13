@@ -13,7 +13,8 @@ import {
     HttpCode,
     HttpStatus,
     NotFoundException,
-    ConflictException
+    ConflictException,
+    UseInterceptors
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';

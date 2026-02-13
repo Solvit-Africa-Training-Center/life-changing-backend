@@ -64,6 +64,18 @@ export class DonorsService extends BaseService<Donor> {
     return plainToInstance(Donor, donor);
   }
 
+
+  async findDonorById(id: string): Promise<Donor | null> {
+    const donor = await this.donorsRepository.findOne({
+      where: { id },
+      relations: ['user', 'donations', 'recurringDonations'],
+    });
+
+    if (!donor) return null;
+
+    return plainToInstance(Donor, donor);
+  }
+
   async updateDonor(donorId: string, updateDonorDto: UpdateDonorDto): Promise<Donor> {
     const donor = await this.findOne(donorId, ['user']);
 
