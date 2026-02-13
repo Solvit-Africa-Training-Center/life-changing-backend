@@ -12,6 +12,7 @@ import {
   HttpCode,
   ForbiddenException,
   NotFoundException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -24,11 +25,13 @@ import { UserType } from '../../../config/constants';
 import type { PaginationParams } from '../../../shared/interfaces/pagination.interface';
 import { Beneficiary } from '../entities/beneficiary.entity';
 import { EmergencyContact } from '../entities/emergency-contact.entity';
+import { BeneficiaryServiceInterceptor } from 'src/common/interceptors/beneficiary-service.interceptor';
 
 @ApiTags('beneficiaries')
 @Controller('beneficiaries/emergency-contacts')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
+@UseInterceptors(BeneficiaryServiceInterceptor)
 export class EmergencyContactsController {
   constructor(private readonly contactsService: EmergencyContactsService) {}
 

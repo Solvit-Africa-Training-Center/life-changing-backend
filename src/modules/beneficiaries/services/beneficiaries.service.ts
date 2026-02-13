@@ -50,6 +50,11 @@ export class BeneficiariesService extends BaseService<Beneficiary> {
     return this.queryService.findBeneficiaryByUserId(userId);
   }
 
+  async findBeneficiaryById(id: string): Promise<Beneficiary | null> {
+    return this.queryService.findBeneficiaryById(id);
+  }
+
+
   async updateBeneficiary(beneficiaryId: string, updateBeneficiaryDto: UpdateBeneficiaryDto): Promise<Beneficiary> {
     return this.managementService.updateBeneficiary(beneficiaryId, updateBeneficiaryDto);
   }

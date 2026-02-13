@@ -45,6 +45,17 @@ export class BeneficiaryQueryService {
     return plainToInstance(Beneficiary, beneficiary);
   }
 
+   async findBeneficiaryById(id: string): Promise<Beneficiary | null> {
+      const beneficiary = await this.beneficiariesRepository.findOne({
+      where: { id },
+      relations: ['user', 'program', 'weeklyTrackings', 'goals', 'documents', 'emergencyContacts'],
+    });
+
+    if (!beneficiary) return null;
+
+    return plainToInstance(Beneficiary, beneficiary);
+  }
+
   private async paginateWithRelations(
     paginationParams: PaginationParams,
     where: FindOptionsWhere<Beneficiary>,
