@@ -14,11 +14,8 @@ export class StoryUpdateService {
     private readonly validationService: StoryValidationService,
   ) {}
 
-  async updateStory(
-    storyId: string,
-    dto: UpdateStoryDTO,
-  ): Promise<Story> {
-    const story = await this.validationService.validateStory(storyId);
+  async updateStory(storyId: string, dto: UpdateStoryDTO): Promise<Story> {
+    const story = await this.validationService.validateStory(storyId, ['program', 'beneficiary']);
 
     // Update program if provided
     if (dto.programId !== undefined) {
@@ -27,8 +24,7 @@ export class StoryUpdateService {
 
     // Update beneficiary if provided
     if (dto.beneficiaryId !== undefined) {
-      story.beneficiaryId = dto.beneficiaryId;
-      await this.validationService.validateBeneficiary(dto.beneficiaryId);
+      story.beneficiary = await this.validationService.validateBeneficiary(dto.beneficiaryId);
     }
 
     // Update basic fields
@@ -38,13 +34,22 @@ export class StoryUpdateService {
     if (dto.authorRole !== undefined) story.authorRole = dto.authorRole;
     if (dto.isFeatured !== undefined) story.isFeatured = dto.isFeatured;
     if (dto.isPublished !== undefined) story.isPublished = dto.isPublished;
-    if (dto.publishedDate !== undefined) story.publishedDate = new Date(dto.publishedDate);
+    
+    // Update published date
+    if (dto.publishedDate !== undefined) {
+      const publishedDate = new Date(dto.publishedDate);
+      this.validationService.validateStoryDates(publishedDate);
+      story.publishedDate = publishedDate;
+    }
+    
     if (dto.language !== undefined) story.language = dto.language;
+    
+    // Update metadata (merge with existing)
     if (dto.metadata !== undefined) {
       story.metadata = {
         ...story.metadata,
         ...dto.metadata,
-      };
+      } as any;
     }
 
     return this.storyRepository.save(story);
@@ -60,5 +65,31 @@ export class StoryUpdateService {
     const story = await this.validationService.validateStory(storyId);
     story.shareCount += 1;
     return this.storyRepository.save(story);
+  }
+
+  async toggleFeatured(storyId: string): Promise<Story> {
+    const story = await this.validationService.validateStory(storyId);
+    story.isFeatured = !story.isFeatured;
+    return this.storyRepository.save(story);
+  }
+
+  async togglePublished(storyId: string): Promise<Story> {
+    const story = await this.validationService.validateStory(storyId);
+    story.isPublished = !story.isPublished;
+    return this.storyRepository.save(story);
+  }
+
+  async bulkUpdateStories(
+    storyIds: string[],
+    updates: Partial<Pick<Story, 'isPublished' | 'isFeatured' | 'language'>>,
+  ): Promise<number> {
+    const result = await this.storyRepository
+      .createQueryBuilder()
+      .update(Story)
+      .set(updates)
+      .whereInIds(storyIds)
+      .execute();
+
+    return result.affected || 0;
   }
 }

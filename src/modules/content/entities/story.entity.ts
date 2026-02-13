@@ -1,3 +1,4 @@
+// src/modules/content/entities/story.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -8,6 +9,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { Program } from '../../programs/entities/program.entity';
+import { Beneficiary } from '../../beneficiaries/entities/beneficiary.entity';
 import { Language, UserType } from '../../../config/constants';
 
 @Entity('stories')
@@ -37,19 +39,24 @@ export class Story {
   })
   authorRole: UserType;
 
+  // Program relation (optional)
   @ManyToOne(() => Program, { nullable: true })
   @JoinColumn({ name: 'program_id' })
-  program: Program;
+  program: Program | null;
 
-  @Column({ name: 'beneficiary_id', nullable: true })
-  beneficiaryId: string;
+  // Beneficiary relation (optional)
+  @ManyToOne(() => Beneficiary, { nullable: true })
+  @JoinColumn({ name: 'beneficiary_id' })
+  beneficiary: Beneficiary | null;
 
   @Column({ type: 'jsonb', nullable: true })
   media: Array<{
     url: string;
+    publicId: string; 
     type: 'image' | 'video';
     caption: string;
-    thumbnail: string;
+    thumbnail: string;     // Thumbnail URL for videos
+    thumbnailPublicId?: string; // Optional: for video thumbnails
   }>;
 
   @Column({ name: 'is_featured', default: false })
@@ -79,7 +86,7 @@ export class Story {
     tags: string[];
     location: string;
     duration: number;
-  };
+  } | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

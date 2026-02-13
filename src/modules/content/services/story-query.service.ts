@@ -1,7 +1,7 @@
 // src/modules/content/services/story-query.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Like } from 'typeorm';
+import { Repository, FindOptionsWhere, Like, Between } from 'typeorm';
 import { Story } from '../entities/story.entity';
 import { BaseService } from '../../../shared/services/base.service';
 import { PaginationParams, PaginatedResponse } from '../../../shared/interfaces/pagination.interface';
@@ -31,10 +31,37 @@ export class StoryQueryService extends BaseService<Story> {
       if (filter.language) where.language = filter.language;
       if (filter.isFeatured !== undefined) where.isFeatured = filter.isFeatured;
       if (filter.programId) where.program = { id: filter.programId } as any;
-      if (filter.beneficiaryId) where.beneficiaryId = filter.beneficiaryId;
+      if (filter.beneficiaryId) where.beneficiary = { id: filter.beneficiaryId } as any;
+      
+      // ✅ Date range filter using Between (more TypeORM friendly)
+      if (filter.fromDate && filter.toDate) {
+        where.publishedDate = Between(
+          new Date(filter.fromDate),
+          new Date(filter.toDate)
+        ) as any;
+      } else if (filter.fromDate) {
+        where.publishedDate = Between(
+          new Date(filter.fromDate),
+          new Date()
+        ) as any;
+      } else if (filter.toDate) {
+        // Get stories before toDate
+        const whereAny = where as any;
+        whereAny.publishedDate = Between(
+          new Date('1970-01-01'),
+          new Date(filter.toDate)
+        );
+      }
     }
 
-    return this.paginate(paginationParams, where, ['program']);
+    // ✅ Set default sort in paginationParams
+    const params = {
+      ...paginationParams,
+      sortBy: paginationParams.sortBy || 'publishedDate',
+      sortOrder: paginationParams.sortOrder || 'DESC',
+    };
+
+    return this.paginate(params, where, ['program', 'beneficiary']);
   }
 
   async getAdminStories(
@@ -48,14 +75,40 @@ export class StoryQueryService extends BaseService<Story> {
       if (filter.isPublished !== undefined) where.isPublished = filter.isPublished;
       if (filter.isFeatured !== undefined) where.isFeatured = filter.isFeatured;
       if (filter.programId) where.program = { id: filter.programId } as any;
-      if (filter.beneficiaryId) where.beneficiaryId = filter.beneficiaryId;
+      if (filter.beneficiaryId) where.beneficiary = { id: filter.beneficiaryId } as any;
+      
+      // ✅ Date range filter
+      if (filter.fromDate && filter.toDate) {
+        where.publishedDate = Between(
+          new Date(filter.fromDate),
+          new Date(filter.toDate)
+        ) as any;
+      } else if (filter.fromDate) {
+        where.publishedDate = Between(
+          new Date(filter.fromDate),
+          new Date()
+        ) as any;
+      } else if (filter.toDate) {
+        const whereAny = where as any;
+        whereAny.publishedDate = Between(
+          new Date('1970-01-01'),
+          new Date(filter.toDate)
+        );
+      }
     }
 
-    return this.paginate(paginationParams, where, ['program']);
+    // ✅ Set default sort for admin
+    const params = {
+      ...paginationParams,
+      sortBy: paginationParams.sortBy || 'createdAt',
+      sortOrder: paginationParams.sortOrder || 'DESC',
+    };
+
+    return this.paginate(params, where, ['program', 'beneficiary']);
   }
 
   async getStoryById(storyId: string): Promise<Story> {
-    return this.validationService.validateStory(storyId, ['program']);
+    return this.validationService.validateStory(storyId, ['program', 'beneficiary']);
   }
 
   async getFeaturedStories(limit: number = 6): Promise<Story[]> {
@@ -64,9 +117,9 @@ export class StoryQueryService extends BaseService<Story> {
         isPublished: true,
         isFeatured: true,
       },
-      relations: ['program'],
+      relations: ['program', 'beneficiary'],
       order: { publishedDate: 'DESC' },
-      take: limit,
+      take: Math.min(limit, 20),
     });
   }
 
@@ -81,21 +134,120 @@ export class StoryQueryService extends BaseService<Story> {
       isPublished: true,
     };
 
-    return this.paginate(paginationParams, where, ['program']);
+    const params = {
+      ...paginationParams,
+      sortBy: paginationParams.sortBy || 'publishedDate',
+      sortOrder: paginationParams.sortOrder || 'DESC',
+    };
+
+    return this.paginate(params, where, ['program', 'beneficiary']);
+  }
+
+  async getStoriesByBeneficiary(
+    beneficiaryId: string,
+    paginationParams: PaginationParams,
+  ): Promise<PaginatedResponse<Story>> {
+    await this.validationService.validateBeneficiary(beneficiaryId);
+
+    const where: FindOptionsWhere<Story> = {
+      beneficiary: { id: beneficiaryId },
+      isPublished: true,
+    };
+
+    const params = {
+      ...paginationParams,
+      sortBy: paginationParams.sortBy || 'publishedDate',
+      sortOrder: paginationParams.sortOrder || 'DESC',
+    };
+
+    return this.paginate(params, where, ['program', 'beneficiary']);
   }
 
   async searchStories(
     searchTerm: string,
     paginationParams: PaginationParams,
   ): Promise<PaginatedResponse<Story>> {
+    if (!searchTerm || searchTerm.trim() === '') {
+      return this.getPublicStories(paginationParams);
+    }
+
+    const searchLower = `%${searchTerm.toLowerCase()}%`;
+    
     const where: FindOptionsWhere<Story>[] = [
-      { title: { en: Like(`%${searchTerm}%`) } as any, isPublished: true },
-      { title: { rw: Like(`%${searchTerm}%`) } as any, isPublished: true },
-      { content: { en: Like(`%${searchTerm}%`) } as any, isPublished: true },
-      { content: { rw: Like(`%${searchTerm}%`) } as any, isPublished: true },
-      { authorName: Like(`%${searchTerm}%`), isPublished: true },
+      // Search in English title
+      { 
+        title: { en: Like(searchLower) } as any, 
+        isPublished: true 
+      },
+      // Search in Kinyarwanda title
+      { 
+        title: { rw: Like(searchLower) } as any, 
+        isPublished: true 
+      },
+      // Search in English content
+      { 
+        content: { en: Like(searchLower) } as any, 
+        isPublished: true 
+      },
+      // Search in Kinyarwanda content
+      { 
+        content: { rw: Like(searchLower) } as any, 
+        isPublished: true 
+      },
+      // Search in author name
+      { 
+        authorName: Like(searchLower), 
+        isPublished: true 
+      },
     ];
 
-    return this.paginate(paginationParams, where, ['program']);
+    const params = {
+      ...paginationParams,
+      sortBy: paginationParams.sortBy || 'publishedDate',
+      sortOrder: paginationParams.sortOrder || 'DESC',
+    };
+
+    return this.paginate(params, where, ['program', 'beneficiary']);
+  }
+
+  async getRecentStories(limit: number = 5): Promise<Story[]> {
+    return this.storyRepository.find({
+      where: { isPublished: true },
+      relations: ['program', 'beneficiary'],
+      order: { publishedDate: 'DESC' },
+      take: Math.min(limit, 10),
+    });
+  }
+
+  async getStoriesByDateRange(
+    startDate: Date,
+    endDate: Date,
+    paginationParams: PaginationParams,
+  ): Promise<PaginatedResponse<Story>> {
+    const where: FindOptionsWhere<Story> = {
+      publishedDate: Between(startDate, endDate) as any,
+      isPublished: true,
+    };
+
+    const params = {
+      ...paginationParams,
+      sortBy: paginationParams.sortBy || 'publishedDate',
+      sortOrder: paginationParams.sortOrder || 'DESC',
+    };
+
+    return this.paginate(params, where, ['program', 'beneficiary']);
+  }
+
+  async getStoryWithDetails(storyId: string): Promise<Story & { readingTimeMinutes: number; mediaCount: number }> {
+    const story = await this.getStoryById(storyId);
+    
+    const readingTimeMinutes = Math.ceil((story.metadata?.duration || 0) / 60);
+    const mediaCount = story.media?.length || 0;
+
+    return {
+      ...story,
+      readingTimeMinutes,
+      mediaCount,
+    };
   }
 }

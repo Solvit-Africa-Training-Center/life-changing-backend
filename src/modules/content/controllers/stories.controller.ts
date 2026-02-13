@@ -52,7 +52,7 @@ export class StoriesController {
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'rw'] })
   @ApiQuery({ name: 'isFeatured', required: false, type: Boolean })
   @ApiQuery({ name: 'programId', required: false, type: String })
-  @ApiQuery({ name: 'beneficiaryId', required: false, type: String })
+  @ApiQuery({ name: 'beneficiaryId', required: false, type: String }) 
   async getPublicStories(
     @Query() paginationParams: PaginationParams,
     @Query() filter: StoryFilterDto,

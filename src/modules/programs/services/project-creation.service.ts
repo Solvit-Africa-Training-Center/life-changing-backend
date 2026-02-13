@@ -51,12 +51,15 @@ export class ProjectCreationService {
       },
     });
 
-    // Handle cover image upload
+    const savedProject = await this.projectRepository.save(project);
+
+    // Handle cover image upload WITH the actual project ID
     if (coverImage) {
-      await this.uploadCoverImage(project, programId, coverImage);
+      await this.uploadCoverImage(savedProject, programId, coverImage);
     }
 
-    return this.projectRepository.save(project);
+    return savedProject;
+
   }
 
   private async uploadCoverImage(
@@ -67,5 +70,7 @@ export class ProjectCreationService {
     const upload = await this.cloudinaryService.uploadProjectCover(programId, project.id, file);
     project.coverImage = upload.url;
     project.coverImagePublicId = upload.publicId;
+
+    await this.projectRepository.save(project);
   }
 }

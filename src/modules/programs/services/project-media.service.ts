@@ -13,7 +13,7 @@ export class ProjectMediaService {
     private readonly projectRepository: Repository<Project>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly validationService: ProjectValidationService,
-  ) {}
+  ) { }
 
   async uploadProjectCover(
     programId: string,
@@ -51,6 +51,26 @@ export class ProjectMediaService {
     return this.projectRepository.save(project);
   }
 
+  async updateGalleryCaptions(
+    programId: string,
+    projectId: string,
+    items: Array<{ publicId: string; caption: string }>
+  ): Promise<Project> {
+    const { project } = await this.validationService.validateProgramAndProject(programId, projectId);
+
+    if (!project.gallery) {
+      project.gallery = [];
+    }
+
+    items.forEach(({ publicId, caption }) => {
+      const item = project.gallery?.find(g => g.publicId === publicId);
+      if (item) {
+        item.caption = caption;
+      }
+    });
+
+    return this.projectRepository.save(project);
+  }
   async deleteGalleryItem(
     programId: string,
     projectId: string,

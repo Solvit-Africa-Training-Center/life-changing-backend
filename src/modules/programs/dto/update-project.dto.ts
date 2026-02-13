@@ -6,9 +6,7 @@ import {
   IsOptional, 
   ValidateNested, 
   IsNumber, 
-  IsObject,
-  IsArray,
-  IsString
+  IsBoolean
 } from 'class-validator';
 import { 
   ProjectNameDto, 
@@ -103,4 +101,24 @@ export class UpdateProjectDTO extends PartialType(CreateProjectDTO) {
     return value;
   })
   impactMetrics?: ImpactMetricsDto;
+
+   @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value === 'true' || value === '1';
+    }
+    return value;
+  })
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value === 'true' || value === '1';
+    }
+    return value;
+  })
+  isFeatured?: boolean;
 }

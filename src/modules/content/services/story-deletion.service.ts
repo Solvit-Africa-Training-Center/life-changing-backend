@@ -18,21 +18,25 @@ export class StoryDeletionService {
   async deleteStory(storyId: string): Promise<void> {
     const story = await this.validationService.validateStory(storyId);
 
-    // Delete all media from Cloudinary
+    // Delete all media from Cloudinary using publicIds
     await this.deleteAllStoryMedia(story);
 
     // Delete story from database
     await this.storyRepository.delete(storyId);
   }
 
-  async deleteAllStoryMedia(story: Story): Promise<void> {
+  private async deleteAllStoryMedia(story: Story): Promise<void> {
     const deletePromises: Promise<void>[] = [];
 
     if (story.media && story.media.length > 0) {
       story.media.forEach(item => {
-        const publicId = this.cloudinaryService.extractPublicIdFromUrl(item.url);
-        if (publicId) {
-          deletePromises.push(this.cloudinaryService.deleteFile(publicId));
+        // Delete main media file
+        if (item.publicId) {
+          deletePromises.push(this.cloudinaryService.deleteFile(item.publicId));
+        }
+        // Delete thumbnail if exists
+        if (item.thumbnailPublicId) {
+          deletePromises.push(this.cloudinaryService.deleteFile(item.thumbnailPublicId));
         }
       });
     }

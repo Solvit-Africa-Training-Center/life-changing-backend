@@ -85,4 +85,13 @@ export class StoryValidationService {
       }
     }
   }
+
+  validateStoryDates(publishedDate: Date): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (publishedDate > today) {
+      throw new BadRequestException('Published date cannot be in the future');
+    }
+  }
 }
