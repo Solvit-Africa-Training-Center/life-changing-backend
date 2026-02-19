@@ -1,7 +1,7 @@
 // src/modules/content/services/story-query.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Like, Between } from 'typeorm';
+import { Repository, FindOptionsWhere, Like, Between, In } from 'typeorm';
 import { Story } from '../entities/story.entity';
 import { BaseService } from '../../../shared/services/base.service';
 import { PaginationParams, PaginatedResponse } from '../../../shared/interfaces/pagination.interface';
@@ -32,8 +32,8 @@ export class StoryQueryService extends BaseService<Story> {
       if (filter.isFeatured !== undefined) where.isFeatured = filter.isFeatured;
       if (filter.programId) where.program = { id: filter.programId } as any;
       if (filter.beneficiaryId) where.beneficiary = { id: filter.beneficiaryId } as any;
-      
-      // ✅ Date range filter using Between (more TypeORM friendly)
+
+      // Date range filter
       if (filter.fromDate && filter.toDate) {
         where.publishedDate = Between(
           new Date(filter.fromDate),
@@ -45,16 +45,18 @@ export class StoryQueryService extends BaseService<Story> {
           new Date()
         ) as any;
       } else if (filter.toDate) {
-        // Get stories before toDate
         const whereAny = where as any;
         whereAny.publishedDate = Between(
           new Date('1970-01-01'),
           new Date(filter.toDate)
         );
       }
+
+      if (filter.authorName) {
+        where.authorName = Like(`%${filter.authorName}%`);
+      }
     }
 
-    // ✅ Set default sort in paginationParams
     const params = {
       ...paginationParams,
       sortBy: paginationParams.sortBy || 'publishedDate',
@@ -76,8 +78,8 @@ export class StoryQueryService extends BaseService<Story> {
       if (filter.isFeatured !== undefined) where.isFeatured = filter.isFeatured;
       if (filter.programId) where.program = { id: filter.programId } as any;
       if (filter.beneficiaryId) where.beneficiary = { id: filter.beneficiaryId } as any;
-      
-      // ✅ Date range filter
+
+      // Date range filter
       if (filter.fromDate && filter.toDate) {
         where.publishedDate = Between(
           new Date(filter.fromDate),
@@ -95,9 +97,12 @@ export class StoryQueryService extends BaseService<Story> {
           new Date(filter.toDate)
         );
       }
+
+      if (filter.authorName) {
+        where.authorName = Like(`%${filter.authorName}%`);
+      }
     }
 
-    // ✅ Set default sort for admin
     const params = {
       ...paginationParams,
       sortBy: paginationParams.sortBy || 'createdAt',
@@ -172,32 +177,32 @@ export class StoryQueryService extends BaseService<Story> {
     }
 
     const searchLower = `%${searchTerm.toLowerCase()}%`;
-    
+
     const where: FindOptionsWhere<Story>[] = [
       // Search in English title
-      { 
-        title: { en: Like(searchLower) } as any, 
-        isPublished: true 
+      {
+        title: { en: Like(searchLower) } as any,
+        isPublished: true
       },
       // Search in Kinyarwanda title
-      { 
-        title: { rw: Like(searchLower) } as any, 
-        isPublished: true 
+      {
+        title: { rw: Like(searchLower) } as any,
+        isPublished: true
       },
       // Search in English content
-      { 
-        content: { en: Like(searchLower) } as any, 
-        isPublished: true 
+      {
+        content: { en: Like(searchLower) } as any,
+        isPublished: true
       },
       // Search in Kinyarwanda content
-      { 
-        content: { rw: Like(searchLower) } as any, 
-        isPublished: true 
+      {
+        content: { rw: Like(searchLower) } as any,
+        isPublished: true
       },
       // Search in author name
-      { 
-        authorName: Like(searchLower), 
-        isPublished: true 
+      {
+        authorName: Like(searchLower),
+        isPublished: true
       },
     ];
 
@@ -240,7 +245,7 @@ export class StoryQueryService extends BaseService<Story> {
 
   async getStoryWithDetails(storyId: string): Promise<Story & { readingTimeMinutes: number; mediaCount: number }> {
     const story = await this.getStoryById(storyId);
-    
+
     const readingTimeMinutes = Math.ceil((story.metadata?.duration || 0) / 60);
     const mediaCount = story.media?.length || 0;
 
@@ -249,5 +254,12 @@ export class StoryQueryService extends BaseService<Story> {
       readingTimeMinutes,
       mediaCount,
     };
+  }
+
+  async getStoriesByIds(storyIds: string[]): Promise<Story[]> {
+    return this.storyRepository.find({
+      where: { id: In(storyIds) },
+      relations: ['program', 'beneficiary'],
+    });
   }
 }

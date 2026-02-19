@@ -88,6 +88,41 @@ export class StoriesService extends BaseService<Story> {
     return this.mediaService.updateMediaCaption(storyId, mediaUrl, caption);
   }
 
+  async updateStoryWithMedia(
+    storyId: string,
+    dto: UpdateStoryDTO,
+    mediaFiles?: Express.Multer.File[],
+    mediaTypes?: ('image' | 'video')[],
+    captions?: string[],
+    mediaUpdates?: { publicId: string; caption: string }[],
+    mediaToRemove?: string[],
+  ): Promise<Story> {
+    // First update the story basic info
+    const updatedStory = await this.updateService.updateStory(storyId, dto);
+
+    // Handle media removals
+    if (mediaToRemove && mediaToRemove.length > 0) {
+      await this.mediaService.removeMultipleMedia(storyId, mediaToRemove);
+    }
+
+    // Handle media caption updates
+    if (mediaUpdates && mediaUpdates.length > 0) {
+      await this.mediaService.updateMultipleMediaCaptions(storyId, mediaUpdates);
+    }
+
+    // Add new media files
+    if (mediaFiles && mediaFiles.length > 0) {
+      await this.mediaService.addMultipleMedia(
+        storyId,
+        mediaFiles,
+        mediaTypes || [],
+        captions || [],
+      );
+    }
+
+    // Return the fully updated story
+    return this.validationService.validateStory(storyId, ['program', 'beneficiary']);
+  }
   // ================= QUERY =================
   async getPublicStories(
     paginationParams: PaginationParams,

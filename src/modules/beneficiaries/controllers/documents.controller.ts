@@ -175,7 +175,7 @@ export class DocumentsController {
 
   // ================= MULTIPLE DOCUMENTS UPLOAD =================
   @Post('upload/multiple')
-  @Roles(UserType.ADMIN)
+  @Roles(UserType.BENEFICIARY,UserType.ADMIN)
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
@@ -186,9 +186,9 @@ export class DocumentsController {
           'image/jpeg',
           'image/jpg',
           'image/png',
-          'image/webp',
+          'image/webp', 
           'image/gif',
-
+ 
           // PDF
           'application/pdf',
 

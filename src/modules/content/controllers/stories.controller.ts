@@ -41,7 +41,7 @@ import type { PaginationParams } from '../../../shared/interfaces/pagination.int
 @ApiTags('stories')
 @Controller('stories')
 export class StoriesController {
-  constructor(private readonly storiesService: StoriesService) {}
+  constructor(private readonly storiesService: StoriesService) { }
 
   // ================= PUBLIC ENDPOINTS =================
 
@@ -52,7 +52,7 @@ export class StoriesController {
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'rw'] })
   @ApiQuery({ name: 'isFeatured', required: false, type: Boolean })
   @ApiQuery({ name: 'programId', required: false, type: String })
-  @ApiQuery({ name: 'beneficiaryId', required: false, type: String }) 
+  @ApiQuery({ name: 'beneficiaryId', required: false, type: String })
   async getPublicStories(
     @Query() paginationParams: PaginationParams,
     @Query() filter: StoryFilterDto,
@@ -97,10 +97,10 @@ export class StoriesController {
   @ApiOperation({ summary: 'Get story by ID (public)' })
   async getStory(@Param('id') id: string) {
     const story = await this.storiesService.getStoryById(id);
-    
+
     // Increment view count asynchronously
     this.storiesService.incrementViewCount(id).catch(console.error);
-    
+
     return this.storiesService.getStoryWithStats(id);
   }
 
@@ -113,7 +113,7 @@ export class StoriesController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FilesInterceptor('media', 10, {
-      limits: { fileSize: 100 * 1024 * 1024 }, // 100MB max per file
+      limits: { fileSize: 100 * 1024 * 1024 },
       fileFilter: (req, file, cb) => {
         const isImage = file.mimetype.startsWith('image/');
         const isVideo = file.mimetype.startsWith('video/');
@@ -180,8 +180,8 @@ export class StoriesController {
         },
         authorName: { type: 'string', example: 'Marie Uwase' },
         authorRole: { type: 'string', enum: Object.values(UserType), example: 'beneficiary' },
-        programId: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' },
-        beneficiaryId: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' },
+        programId: { type: 'string', example: 'aebae5ff-22e4-4309-924b-37cbabf8a9aa' },
+        beneficiaryId: { type: 'string', example: '04e85336-4f3a-4065-98c4-3b1b69fb31b9' },
         publishedDate: { type: 'string', format: 'date', example: '2026-03-15' },
         language: { type: 'string', enum: ['en', 'rw'], example: 'en' },
         isFeatured: { type: 'boolean', example: false },
@@ -197,13 +197,13 @@ export class StoriesController {
         },
         mediaTypes: {
           type: 'string',
-          example: '["image","video"]',
-          description: 'JSON string array of media types',
+          example: '["image","video"] or image,video',
+          description: 'JSON string array of media types OR comma-separated values',
         },
         captions: {
           type: 'string',
-          example: '["Marie receiving her certificate","Marie at her business"]',
-          description: 'JSON string array of captions',
+          example: '["Marie receiving her certificate","Marie at her business"] or Caption1,Caption2',
+          description: 'JSON string array of captions OR comma-separated values',
         },
       },
       required: ['title', 'content', 'authorName', 'authorRole'],
@@ -215,33 +215,76 @@ export class StoriesController {
     @Body('mediaTypes') mediaTypesStr?: string,
     @Body('captions') captionsStr?: string,
   ) {
-    // Parse media types and captions from JSON strings
+    // Helper for robust parsing
+    const parseMixedInput = (input: string | string[]): string[] => {
+      if (!input) return [];
+
+      let items: any[] = [];
+
+      // If array (e.g. from multiple form fields), flatten it
+      if (Array.isArray(input)) {
+        items = input;
+      } else {
+        // Try JSON parse first
+        try {
+          const parsed = JSON.parse(input);
+          items = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          // Fallback to comma separation
+          items = input.includes(',') ? input.split(',') : [input];
+        }
+      }
+
+      // Flatten nested arrays and convert to string
+      return items.flat().map(item => String(item).trim());
+    };
+
     let mediaTypes: ('image' | 'video')[] = [];
-    let captions: string[] = [];
-
     if (mediaTypesStr) {
-      try {
-        mediaTypes = JSON.parse(mediaTypesStr);
-      } catch {
-        throw new BadRequestException('Invalid mediaTypes format. Must be a JSON array.');
-      }
+      const p = parseMixedInput(mediaTypesStr);
+      mediaTypes = p.map(t => {
+        // Clean up common artifacts (quotes, brackets) from bad parsing
+        const clean = t.replace(/['"\[\]]/g, '').toLowerCase();
+        return clean.startsWith('vid') ? 'video' : 'image';
+      });
+    } else if (files && files.length > 0) {
+      mediaTypes = files.map(file =>
+        file.mimetype.startsWith('video/') ? 'video' : 'image'
+      );
     }
 
+    let captions: string[] = [];
     if (captionsStr) {
-      try {
-        captions = JSON.parse(captionsStr);
-      } catch {
-        throw new BadRequestException('Invalid captions format. Must be a JSON array.');
-      }
+      const p = parseMixedInput(captionsStr);
+      captions = p.map(c => {
+        // Don't remove quotes from captions blindly, but handle the ["caption"] string case if needed
+        // If the string starts with [ and ends with ], and parsing failed before, chance is it's a malformed array string
+        // But complex captions might include []
+        // For now, simple trim is safest, we rely on parseMixedInput for JSON structure
+        if (c.startsWith('["') && c.endsWith('"]')) {
+          try { return JSON.parse(c)[0]; } catch { return c; }
+        }
+        return c;
+      });
+    } else if (files && files.length > 0) {
+      captions = files.map(() => '');
     }
 
-    // Ensure mediaTypes length matches files length
+    // Ensure arrays match
     if (files && files.length > 0) {
-      if (mediaTypes.length !== files.length) {
-        throw new BadRequestException(
-          'Number of media types must match number of files',
-        );
+      const diff = files.length - mediaTypes.length;
+      if (diff > 0) {
+        const defaults = files.slice(mediaTypes.length).map(f => f.mimetype.startsWith('video/') ? 'video' : 'image');
+        mediaTypes.push(...(defaults as ('image' | 'video')[]));
       }
+
+      while (captions.length < files.length) {
+        captions.push('');
+      }
+
+      // Trim if too many
+      if (mediaTypes.length > files.length) mediaTypes = mediaTypes.slice(0, files.length);
+      if (captions.length > files.length) captions = captions.slice(0, files.length);
     }
 
     return this.storiesService.createStoryWithMedia(data, files, mediaTypes, captions);
@@ -251,12 +294,222 @@ export class StoriesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserType.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a story (admin only)' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FilesInterceptor('media', 10, {
+      limits: { fileSize: 100 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        const isImage = file.mimetype.startsWith('image/');
+        const isVideo = file.mimetype.startsWith('video/');
+
+        if (!isImage && !isVideo) {
+          return cb(
+            new BadRequestException('Only image and video files are allowed'),
+            false,
+          );
+        }
+
+        if (isImage) {
+          const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+          if (!allowedMimes.includes(file.mimetype)) {
+            return cb(
+              new BadRequestException(
+                `Image type ${file.mimetype} not allowed. Allowed types: JPEG, PNG, WebP, GIF`
+              ),
+              false,
+            );
+          }
+          if (file.size > 10 * 1024 * 1024) {
+            return cb(
+              new BadRequestException('Image size must not exceed 10MB'),
+              false,
+            );
+          }
+        }
+
+        if (isVideo) {
+          const allowedMimes = ['video/mp4', 'video/quicktime', 'video/webm'];
+          if (!allowedMimes.includes(file.mimetype)) {
+            return cb(
+              new BadRequestException(
+                `Video type ${file.mimetype} not allowed. Allowed types: MP4, MOV, WebM`
+              ),
+              false,
+            );
+          }
+          if (file.size > 100 * 1024 * 1024) {
+            return cb(
+              new BadRequestException('Video size must not exceed 100MB'),
+              false,
+            );
+          }
+        }
+
+        cb(null, true);
+      },
+    }),
+  )
+  @ApiOperation({ summary: 'Update a story with optional media files (admin only)' })
+  @ApiBody({
+    description: 'Update a story with optional media files',
+    schema: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          example: '{"en":"Updated Story Title","rw":"Umutwe w Inkuru Wahinduwe"}',
+        },
+        content: {
+          type: 'string',
+          example: '{"en":"Updated content...","rw":"Ibirimo byahinduwe..."}',
+        },
+        authorName: { type: 'string', example: 'Marie Uwase' },
+        authorRole: { type: 'string', enum: Object.values(UserType), example: 'beneficiary' },
+        programId: { type: 'string', example: 'aebae5ff-22e4-4309-924b-37cbabf8a9aa' },
+        beneficiaryId: { type: 'string', example: '04e85336-4f3a-4065-98c4-3b1b69fb31b9' },
+        publishedDate: { type: 'string', format: 'date', example: '2026-03-15' },
+        language: { type: 'string', enum: ['en', 'rw'], example: 'en' },
+        isFeatured: { type: 'boolean', example: false },
+        isPublished: { type: 'boolean', example: true },
+        metadata: {
+          type: 'string',
+          example: '{"tags":["women-empowerment","entrepreneurship"],"location":"Kigali","duration":120}',
+        },
+        // Media fields
+        media: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          description: 'New media files to add (images/videos)',
+        },
+        mediaTypes: {
+          type: 'string',
+          example: '["image","video"] or image,video',
+          description: 'Media types for new files - JSON array or comma-separated values',
+        },
+        captions: {
+          type: 'string',
+          example: '["New caption 1","New caption 2"] or Caption1,Caption2',
+          description: 'Captions for new files - JSON array or comma-separated values',
+        },
+        // Media management fields
+        updateMedia: {
+          type: 'string',
+          example: '[{"publicId":"abc123","caption":"Updated caption 1"},{"publicId":"def456","caption":"Updated caption 2"}]',
+          description: 'JSON string array of media items to update captions',
+        },
+        removeMedia: {
+          type: 'string',
+          example: '["publicId1","publicId2"] or publicId1,publicId2',
+          description: 'JSON array or comma-separated list of publicIds to remove',
+        },
+      },
+    },
+  })
   async updateStory(
     @Param('id') id: string,
     @Body() data: UpdateStoryDTO,
+    @UploadedFiles() files?: Express.Multer.File[],
+    @Body('mediaTypes') mediaTypesStr?: string,
+    @Body('captions') captionsStr?: string,
+    @Body('updateMedia') updateMediaStr?: string,
+    @Body('removeMedia') removeMediaStr?: string,
   ) {
-    return this.storiesService.updateStory(id, data);
+    // Helper for robust parsing (duplicated for scope access, or could be method)
+    const parseMixedInput = (input: string | string[]): string[] => {
+      if (!input) return [];
+      let items: any[] = [];
+      if (Array.isArray(input)) items = input;
+      else {
+        try {
+          const parsed = JSON.parse(input);
+          items = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          items = input.includes(',') ? input.split(',') : [input];
+        }
+      }
+      return items.flat().map(item => String(item).trim());
+    };
+
+    // Parse media types for new files
+    let mediaTypes: ('image' | 'video')[] = [];
+    if (mediaTypesStr) {
+      const p = parseMixedInput(mediaTypesStr);
+      mediaTypes = p.map(t => {
+        const clean = t.replace(/['"\[\]]/g, '').toLowerCase();
+        return clean.startsWith('vid') ? 'video' : 'image';
+      });
+    } else if (files && files.length > 0) {
+      mediaTypes = files.map(file =>
+        file.mimetype.startsWith('video/') ? 'video' : 'image'
+      );
+    }
+
+    // Parse captions for new files
+    let captions: string[] = [];
+    if (captionsStr) {
+      const p = parseMixedInput(captionsStr);
+      captions = p.map(c => {
+        if (c.startsWith('["') && c.endsWith('"]')) {
+          try { return JSON.parse(c)[0]; } catch { return c; }
+        }
+        return c;
+      });
+    } else if (files && files.length > 0) {
+      captions = files.map(() => '');
+    }
+
+    // Parse media updates (caption updates)
+    let mediaUpdates: { publicId: string; caption: string }[] = [];
+    if (updateMediaStr) {
+      try {
+        const parsed = JSON.parse(updateMediaStr);
+        mediaUpdates = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        throw new BadRequestException('Invalid updateMedia format. Must be a JSON array.');
+      }
+    }
+
+    // Parse media to remove
+    let mediaToRemove: string[] = [];
+    if (removeMediaStr) {
+      try {
+        const parsed = JSON.parse(removeMediaStr);
+        mediaToRemove = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        if (removeMediaStr.includes(',')) {
+          mediaToRemove = removeMediaStr.split(',').map(c => c.trim());
+        } else {
+          mediaToRemove = [removeMediaStr.trim()];
+        }
+      }
+    }
+
+    // Ensure arrays match for new files
+    if (files && files.length > 0) {
+      const diff = files.length - mediaTypes.length;
+      if (diff > 0) {
+        const defaults = files.slice(mediaTypes.length).map(f => f.mimetype.startsWith('video/') ? 'video' : 'image');
+        mediaTypes.push(...(defaults as ('image' | 'video')[]));
+      }
+
+      while (captions.length < files.length) {
+        captions.push('');
+      }
+
+      if (mediaTypes.length > files.length) mediaTypes = mediaTypes.slice(0, files.length);
+      if (captions.length > files.length) captions = captions.slice(0, files.length);
+    }
+
+    // Perform the update with all operations
+    return this.storiesService.updateStoryWithMedia(
+      id,
+      data,
+      files,
+      mediaTypes,
+      captions,
+      mediaUpdates,
+      mediaToRemove,
+    );
   }
 
   @Delete(':id')
@@ -321,35 +574,64 @@ export class StoriesController {
       throw new BadRequestException('No files uploaded');
     }
 
+    // Helper for robust parsing
+    const parseMixedInput = (input: string | string[]): string[] => {
+      if (!input) return [];
+      let items: any[] = [];
+      if (Array.isArray(input)) items = input;
+      else {
+        try {
+          const parsed = JSON.parse(input);
+          items = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          items = input.includes(',') ? input.split(',') : [input];
+        }
+      }
+      return items.flat().map(item => String(item).trim());
+    };
+
     let mediaTypes: ('image' | 'video')[] = [];
     let captions: string[] = [];
 
     if (mediaTypesStr) {
-      try {
-        mediaTypes = JSON.parse(mediaTypesStr);
-      } catch {
-        throw new BadRequestException('Invalid mediaTypes format');
-      }
+      const p = parseMixedInput(mediaTypesStr);
+      mediaTypes = p.map(t => {
+        const clean = t.replace(/['"\[\]]/g, '').toLowerCase();
+        return clean.startsWith('vid') ? 'video' : 'image';
+      });
     }
 
     if (captionsStr) {
-      try {
-        captions = JSON.parse(captionsStr);
-      } catch {
-        throw new BadRequestException('Invalid captions format');
-      }
+      const p = parseMixedInput(captionsStr);
+      captions = p.map(c => {
+        if (c.startsWith('["') && c.endsWith('"]')) {
+          try { return JSON.parse(c)[0]; } catch { return c; }
+        }
+        return c;
+      });
     }
 
     // If mediaTypes not provided, try to detect from file mime type
-    if (mediaTypes.length === 0) {
+    if (mediaTypes.length === 0 && files && files.length > 0) {
       mediaTypes = files.map(file =>
         file.mimetype.startsWith('video/') ? 'video' : 'image'
       );
     }
 
-    // Ensure captions array length matches files
-    while (captions.length < files.length) {
-      captions.push('');
+    // Ensure arrays match for new files
+    if (files && files.length > 0) {
+      const diff = files.length - mediaTypes.length;
+      if (diff > 0) {
+        const defaults = files.slice(mediaTypes.length).map(f => f.mimetype.startsWith('video/') ? 'video' : 'image');
+        mediaTypes.push(...(defaults as ('image' | 'video')[]));
+      }
+
+      while (captions.length < files.length) {
+        captions.push('');
+      }
+
+      if (mediaTypes.length > files.length) mediaTypes = mediaTypes.slice(0, files.length);
+      if (captions.length > files.length) captions = captions.slice(0, files.length);
     }
 
     return this.storiesService.addMultipleMedia(id, files, mediaTypes, captions);
@@ -382,7 +664,7 @@ export class StoriesController {
   ) {
     if (!mediaUrl) throw new BadRequestException('mediaUrl is required');
     if (!caption) throw new BadRequestException('caption is required');
-    
+
     return this.storiesService.updateMediaCaption(id, mediaUrl, caption);
   }
 

@@ -19,8 +19,8 @@ export class StoryCreationService {
 
     async createStory(dto: CreateStoryDTO): Promise<Story> {
         // Validate program and beneficiary if provided
-        const program = await this.validationService.validateProgram(dto.programId);
-        const beneficiary = await this.validationService.validateBeneficiary(dto.beneficiaryId);
+        const program = dto.programId ? await this.validationService.validateProgram(dto.programId) : null;
+        const beneficiary = dto.beneficiaryId ? await this.validationService.validateBeneficiary(dto.beneficiaryId) : null;
 
         // Validate published date
         const publishedDate = dto.publishedDate ? new Date(dto.publishedDate) : new Date();
@@ -32,8 +32,8 @@ export class StoryCreationService {
             content: dto.content,
             authorName: dto.authorName,
             authorRole: dto.authorRole,
-            program: program || null,
-            beneficiary: beneficiary || null,
+            program,
+            beneficiary,
             isFeatured: dto.isFeatured || false,
             isPublished: dto.isPublished ?? true,
             publishedDate,
@@ -63,11 +63,14 @@ export class StoryCreationService {
 
         // Upload media files if provided
         if (mediaFiles && mediaFiles.length > 0) {
+            const validMediaTypes = mediaTypes || [];
+            const validCaptions = captions || [];
+
             await this.mediaService.addMultipleMedia(
                 story.id,
                 mediaFiles,
-                mediaTypes || [],
-                captions || [],
+                validMediaTypes,
+                validCaptions,
             );
         }
 

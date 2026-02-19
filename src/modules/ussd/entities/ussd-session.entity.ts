@@ -11,14 +11,113 @@ import {
   UserType, 
   Language, 
   AttendanceStatus,
-  BeneficiaryStatus,
-  Currency,
-  PaymentMethod,
-  PaymentStatus,
   GoalStatus,
   GoalType,
   TaskStatus
 } from '../../../config/constants';
+import { EmergencyContact } from '../../beneficiaries/entities/emergency-contact.entity';
+import { Goal } from '../../beneficiaries/entities/goal.entity';
+
+// Define interfaces for type safety
+interface TrackingData {
+  attendance?: AttendanceStatus;
+  incomeThisWeek?: number;
+  expensesThisWeek?: number;
+  currentCapital?: number;
+  challenges?: string;
+  solutionsImplemented?: string;
+  notes?: string;
+  submissionDate?: Date;
+}
+
+interface GoalData {
+  goalId?: string;
+  goalType?: GoalType;
+  goalStatus?: GoalStatus;
+  progressAmount?: number;
+  targetAmount?: number;
+  description?: string;
+  targetDate?: string;
+}
+
+// New interfaces for USSD flow
+interface NewGoalData {
+  type?: GoalType;
+  description?: string;
+  targetAmount?: number;
+  targetDate?: string;
+}
+
+interface NewContactData {
+  name?: string;
+  phone?: string;
+  relationship?: string;
+  address?: string;
+  isPrimary?: boolean;
+}
+
+interface DonationData {
+  amount?: number;
+  currency?: string;
+  paymentMethod?: string;
+  paymentStatus?: string;
+  transactionId?: string;
+  donorName?: string;
+  donorPhone?: string;
+}
+
+interface StaffData {
+  role?: UserType;
+  assignedTasks?: Array<{
+    taskId: string;
+    taskName: string;
+    status: TaskStatus;
+    dueDate?: Date;
+  }>;
+  beneficiariesToTrack?: string[];
+}
+
+interface EmergencyData {
+  contactType?: 'call' | 'alert' | 'info';
+  message?: string;
+  sentTo?: string[];
+}
+
+interface SessionData {
+  currentMenu: string;
+  previousMenu: string | null;
+  selectedOptions: Record<string, any>;
+  inputHistory: string[];
+  trackingStep?: number;
+  
+  // User identifiers
+  beneficiaryId?: string;
+  staffId?: string;
+  donorId?: string;
+  userId?: string;
+  
+  // Tracking data
+  trackingData?: TrackingData | null;
+  
+  // Goal data
+  goalData?: GoalData;
+  newGoal?: NewGoalData | null;
+  goalsList?: Goal[];
+  selectedGoalIndex?: number;
+  
+  // Contact data
+  newContact?: NewContactData | null;
+  contactsList?: EmergencyContact[];
+  
+  // Donation data
+  donationData?: DonationData;
+  
+  // Staff data
+  staffData?: StaffData;
+  
+  // Emergency data
+  emergencyData?: EmergencyData;
+}
 
 @Entity('ussd_sessions')
 @Index(['sessionId'], { unique: true })
@@ -56,69 +155,7 @@ export class UssdSession {
   language: Language;
 
   @Column({ type: 'jsonb', default: {} })
-  data: {
-    currentMenu: string;
-    previousMenu: string | null;
-    selectedOptions: Record<string, any>;
-    beneficiaryId?: string;
-    staffId?: string;
-    donorId?: string;
-    userId?: string;
-    inputHistory: string[];
-    trackingStep?: number;
-    
-    // Weekly Tracking Data
-    trackingData?: {
-      attendance?: AttendanceStatus;
-      incomeThisWeek?: number;
-      expensesThisWeek?: number;
-      currentCapital?: number;
-      challenges?: string;
-      solutionsImplemented?: string;
-      notes?: string;
-      submissionDate?: Date;
-    };
-    
-    // Goal Data
-    goalData?: {
-      goalId?: string;
-      goalType?: GoalType;
-      goalStatus?: GoalStatus;
-      progressAmount?: number;
-      targetAmount?: number;
-      description?: string;
-    };
-    
-    // Donation Data
-    donationData?: {
-      amount?: number;
-      currency?: Currency;
-      paymentMethod?: PaymentMethod;
-      paymentStatus?: PaymentStatus;
-      transactionId?: string;
-      donorName?: string;
-      donorPhone?: string;
-    };
-    
-    // Staff Data
-    staffData?: {
-      role?: UserType;
-      assignedTasks?: Array<{
-        taskId: string;
-        taskName: string;
-        status: TaskStatus;
-        dueDate?: Date;
-      }>;
-      beneficiariesToTrack?: string[];
-    };
-    
-    // Emergency Data
-    emergencyData?: {
-      contactType?: 'call' | 'alert' | 'info';
-      message?: string;
-      sentTo?: string[];
-    };
-  };
+  data: SessionData;
 
   @Column({ name: 'step_count', type: 'int', default: 0 })
   stepCount: number;

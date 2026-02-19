@@ -52,7 +52,7 @@ export class Story {
   @Column({ type: 'jsonb', nullable: true })
   media: Array<{
     url: string;
-    publicId: string; 
+    publicId: string;
     type: 'image' | 'video';
     caption: string;
     thumbnail: string;     // Thumbnail URL for videos
@@ -84,8 +84,8 @@ export class Story {
   @Column({ type: 'jsonb', nullable: true })
   metadata: {
     tags: string[];
-    location: string;
-    duration: number;
+    location?: string;
+    duration?: number;
   } | null;
 
   @CreateDateColumn({ name: 'created_at' })

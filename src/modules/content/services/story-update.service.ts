@@ -12,19 +12,23 @@ export class StoryUpdateService {
     @InjectRepository(Story)
     private readonly storyRepository: Repository<Story>,
     private readonly validationService: StoryValidationService,
-  ) {}
+  ) { }
 
   async updateStory(storyId: string, dto: UpdateStoryDTO): Promise<Story> {
     const story = await this.validationService.validateStory(storyId, ['program', 'beneficiary']);
 
     // Update program if provided
     if (dto.programId !== undefined) {
-      story.program = await this.validationService.validateProgram(dto.programId);
+      story.program = dto.programId
+        ? await this.validationService.validateProgram(dto.programId)
+        : null;
     }
 
     // Update beneficiary if provided
     if (dto.beneficiaryId !== undefined) {
-      story.beneficiary = await this.validationService.validateBeneficiary(dto.beneficiaryId);
+      story.beneficiary = dto.beneficiaryId
+        ? await this.validationService.validateBeneficiary(dto.beneficiaryId)
+        : null;
     }
 
     // Update basic fields
@@ -34,22 +38,24 @@ export class StoryUpdateService {
     if (dto.authorRole !== undefined) story.authorRole = dto.authorRole;
     if (dto.isFeatured !== undefined) story.isFeatured = dto.isFeatured;
     if (dto.isPublished !== undefined) story.isPublished = dto.isPublished;
-    
+
     // Update published date
     if (dto.publishedDate !== undefined) {
       const publishedDate = new Date(dto.publishedDate);
       this.validationService.validateStoryDates(publishedDate);
       story.publishedDate = publishedDate;
     }
-    
+
     if (dto.language !== undefined) story.language = dto.language;
-    
+
     // Update metadata (merge with existing)
     if (dto.metadata !== undefined) {
       story.metadata = {
-        ...story.metadata,
+        ...(story.metadata || {}),
         ...dto.metadata,
-      } as any;
+        // Ensure tags are properly merged if needed
+        tags: dto.metadata.tags || story.metadata?.tags || [],
+      };
     }
 
     return this.storyRepository.save(story);

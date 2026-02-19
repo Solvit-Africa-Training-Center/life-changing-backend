@@ -1,6 +1,6 @@
 // src/modules/content/dto/story-filter.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsBoolean, IsUUID, IsDateString } from 'class-validator';
+import { IsOptional, IsEnum, IsBoolean, IsUUID, IsDateString, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Language } from '../../../config/constants';
 
@@ -32,14 +32,18 @@ export class StoryFilterDto {
   @IsUUID()
   beneficiaryId?: string;
 
-  // ✅ Add these missing properties
-  @ApiProperty({ required: false, description: 'Filter stories from this date' })
+  @ApiProperty({ required: false, description: 'Filter stories from this date (YYYY-MM-DD)' })
   @IsOptional()
   @IsDateString()
   fromDate?: string;
 
-  @ApiProperty({ required: false, description: 'Filter stories to this date' })
+  @ApiProperty({ required: false, description: 'Filter stories to this date (YYYY-MM-DD)' })
   @IsOptional()
   @IsDateString()
   toDate?: string;
+
+  @ApiProperty({ required: false, description: 'Search by author name' })
+  @IsOptional()
+  @IsString()
+  authorName?: string;
 }

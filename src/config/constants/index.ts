@@ -201,4 +201,4 @@ export const API_PREFIX = '/api';
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 export const CACHE_TTL = 3600;
-export const USSD_TIMEOUT = 180; // seconds
+export const USSD_TIMEOUT = 300; // seconds

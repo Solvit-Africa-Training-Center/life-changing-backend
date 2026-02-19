@@ -39,29 +39,25 @@ export class StoryContentDto {
   rw: string;
 }
 
-export class StoryMediaDto {
-  @ApiProperty({ example: 'https://res.cloudinary.com/...' })
-  @IsString()
-  url: string;
-
-  @ApiProperty({ enum: ['image', 'video'], example: 'image' })
-  @IsEnum(['image', 'video'])
-  type: 'image' | 'video';
-
-  @ApiProperty({ example: 'Marie receiving her business certificate' })
-  @IsString()
-  caption: string;
-
-  @ApiProperty({ example: 'https://res.cloudinary.com/.../thumbnail.jpg' })
-  @IsString()
-  thumbnail: string;
-}
-
 export class StoryMetadataDto {
   @ApiProperty({ example: ['women-empowerment', 'entrepreneurship', 'success-story'] })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        // Handle comma-separated values
+        if (value.includes(',')) {
+          return value.split(',').map(tag => tag.trim());
+        }
+        return [value];
+      }
+    }
+    return value;
+  })
   tags?: string[];
 
   @ApiProperty({ example: 'Kigali, Rwanda', required: false })
@@ -71,7 +67,12 @@ export class StoryMetadataDto {
 
   @ApiProperty({ example: 120, description: 'Reading time in seconds', required: false })
   @IsOptional()
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return parseInt(value, 10);
+    }
+    return value;
+  })
   duration?: number;
 }
 

@@ -33,8 +33,7 @@
     "prepush": "npm run test",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist node_modules/.cache",
-    "rebuild": "npm run clean && npm install && npm run build",
-    "test:email": "ts-node scripts/test-email.ts"
+    "rebuild": "npm run clean && npm install && npm run build"
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.0.2",

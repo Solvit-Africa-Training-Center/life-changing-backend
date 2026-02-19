@@ -44,7 +44,7 @@ export class ProgramQueryService {
   async findProgramById(id: string): Promise<Program> {
     const program = await this.programRepository.findOne({
       where: { id },
-      relations: ['projects', 'beneficiaries', 'impactMetrics', 'stories', 'donations'],
+      relations: ['projects', 'beneficiaries', 'beneficiaries.user','impactMetrics', 'stories', 'donations'],
     });
 
     if (!program) {

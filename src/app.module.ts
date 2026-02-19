@@ -14,7 +14,7 @@ import { UsersModule } from './modules/users/users.module';
 import { BeneficiariesModule } from './modules/beneficiaries/beneficiaries.module';
 import { DonationsModule } from './modules/donations/donations.module';
 import { ProgramsModule } from './modules/programs/programs.module';
-// import { UssdModule } from './modules/ussd/ussd.module';
+import { UssdModule } from './modules/ussd/ussd.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -24,24 +24,24 @@ import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
-      // Add RedisModule here
-      RedisModule.forRootAsync({
-        imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => {
-          const isDocker = process.env.DOCKER === 'true';
-          return {
-            type: 'single',
-            // Use service name in Docker, external IP on local
-            url: isDocker 
-              ? `redis://redis:6379`  // Docker internal
-              : `redis://${configService.get('config.redis.host')}:${configService.get('config.redis.port')}`,
-            options: {
-              password: configService.get('config.redis.password'),
-            },
-          };
-        },
-        inject: [ConfigService],
-      }),
+    // Add RedisModule here
+    RedisModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const isDocker = process.env.DOCKER === 'true';
+        return {
+          type: 'single',
+          // Use service name in Docker, external IP on local
+          url: isDocker
+            ? `redis://redis:6379`  // Docker internal
+            : `redis://${configService.get('config.redis.host')}:${configService.get('config.redis.port')}`,
+          options: {
+            password: configService.get('config.redis.password'),
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
 
     // Core modules
     ConfigurationModule,
@@ -70,7 +70,7 @@ import { SharedModule } from './shared/shared.module';
         const isDocker = process.env.DOCKER === 'true';
         return {
           redis: {
-            host: isDocker 
+            host: isDocker
               ? 'redis'  // Docker service name
               : configService.get('config.redis.host') || 'localhost',
             port: configService.get('config.redis.port') || 6379,
@@ -85,7 +85,7 @@ import { SharedModule } from './shared/shared.module';
               delay: 1000,
             },
           },
-         }
+        }
       },
       inject: [ConfigService],
     }),
@@ -101,7 +101,7 @@ import { SharedModule } from './shared/shared.module';
     BeneficiariesModule,
     DonationsModule,
     ProgramsModule,
-    // UssdModule,
+    UssdModule,
     AnalyticsModule,
     AdminModule,
     NotificationsModule,
